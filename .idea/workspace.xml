@@ -36,38 +36,38 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="SimpleDynamoProvider.java" pinned="false" current-in-tab="true">
+      <file leaf-file-name="SimpleDynamoProvider.java" pinned="false" current-in-tab="false">
         <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/SimpleDynamoProvider.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="1.505843">
-              <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0">
+              <caret line="49" column="0" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
               <folding>
-                <element signature="e#1468#1469#0" expanded="true" />
-                <element signature="e#1495#1496#0" expanded="true" />
-                <element signature="e#18308#18337#1" expanded="true" />
+                <element signature="e#1400#1401#0" expanded="true" />
+                <element signature="e#1427#1428#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="PackageReceiver.java" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Message.java" pinned="false" current-in-tab="false">
+        <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/Message.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="65" column="121" selection-start-line="65" selection-start-column="4" selection-end-line="65" selection-end-column="121" />
+              <folding>
+                <element signature="e#471#487#0" expanded="true" />
+                <element signature="e#547#564#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="PackageReceiver.java" pinned="false" current-in-tab="true">
         <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageReceiver.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="110" column="38" selection-start-line="110" selection-start-column="38" selection-end-line="110" selection-end-column="38" />
+            <state vertical-scroll-proportion="5.0937157">
+              <caret line="234" column="17" selection-start-line="234" selection-start-column="17" selection-end-line="234" selection-end-column="17" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="PackageSender.java" pinned="false" current-in-tab="false">
-        <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageSender.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="28" column="37" selection-start-line="28" selection-start-column="37" selection-end-line="28" selection-end-column="37" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -1597,10 +1597,11 @@
         <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/Server.java" />
         <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/Client.java" />
         <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/DB.java" />
-        <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageReceiver.java" />
         <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/Stash.java" />
-        <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/SimpleDynamoProvider.java" />
         <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageSender.java" />
+        <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageReceiver.java" />
+        <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/Message.java" />
+        <option value="/media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/SimpleDynamoProvider.java" />
       </list>
     </option>
   </component>
@@ -1608,7 +1609,7 @@
     <order />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="1977" />
+    <option name="x" value="-1863" />
     <option name="y" value="21" />
     <option name="width" value="1863" />
     <option name="height" value="1059" />
@@ -1636,6 +1637,10 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="ProjectPane" />
+      <pane id="PackagesPane" />
+      <pane id="Scratches" />
+      <pane id="Scope" />
       <pane id="AndroidView">
         <subPane>
           <PATH>
@@ -1688,10 +1693,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="ProjectPane" />
-      <pane id="Scope" />
-      <pane id="PackagesPane" />
-      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -1877,20 +1878,19 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1977" y="21" width="1863" height="1059" extended-state="6" />
-    <editor active="false" />
+    <frame x="-1863" y="21" width="1863" height="1059" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32976446" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32976446" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Android Model" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32869378" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Android Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32901832" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Captures" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32976446" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
@@ -1907,6 +1907,7 @@
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32869378" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
     </layout>
@@ -1916,7 +1917,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="7" />
+      <option name="time" value="8" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -1924,11 +1925,39 @@
     <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/SimpleDynamoProvider.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
+          <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
+          <folding>
+            <element signature="e#1400#1401#0" expanded="true" />
+            <element signature="e#1427#1428#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageReceiver.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="110" column="38" selection-start-line="110" selection-start-column="38" selection-end-line="110" selection-end-column="38" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageSender.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="28" column="37" selection-start-line="28" selection-start-column="37" selection-end-line="28" selection-end-column="37" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/SimpleDynamoProvider.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
           <caret line="443" column="39" selection-start-line="443" selection-start-column="39" selection-end-line="443" selection-end-column="39" />
           <folding>
-            <element signature="e#1468#1469#0" expanded="true" />
-            <element signature="e#1495#1496#0" expanded="true" />
-            <element signature="e#18308#18337#1" expanded="true" />
+            <element signature="e#1400#1401#0" expanded="true" />
+            <element signature="e#1427#1428#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1937,7 +1966,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="11" column="21" selection-start-line="11" selection-start-column="21" selection-end-line="11" selection-end-column="21" />
-          <folding />
+          <folding>
+            <element signature="e#471#487#0" expanded="true" />
+            <element signature="e#547#564#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1998,7 +2030,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="8" column="13" selection-start-line="8" selection-start-column="13" selection-end-line="8" selection-end-column="13" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -2042,11 +2073,14 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/Message.java">
+    <entry file="file://$USER_HOME$/android-sdk-linux/sources/android-19/java/lang/Thread.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.12127894">
-          <caret line="9" column="0" selection-start-line="9" selection-start-column="0" selection-end-line="10" selection-end-column="52" />
-          <folding />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="208" column="11" selection-start-line="208" selection-start-column="11" selection-end-line="208" selection-end-column="11" />
+          <folding>
+            <element signature="e#6982#6983#0" expanded="true" />
+            <element signature="e#7029#7030#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -2060,23 +2094,33 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageReceiver.java">
+    <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/Message.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="110" column="38" selection-start-line="110" selection-start-column="38" selection-end-line="110" selection-end-column="38" />
-          <folding />
+          <caret line="65" column="121" selection-start-line="65" selection-start-column="4" selection-end-line="65" selection-end-column="121" />
+          <folding>
+            <element signature="e#471#487#0" expanded="true" />
+            <element signature="e#547#564#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/SimpleDynamoProvider.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.505843">
-          <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="49" column="0" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
           <folding>
-            <element signature="e#1468#1469#0" expanded="true" />
-            <element signature="e#1495#1496#0" expanded="true" />
-            <element signature="e#18308#18337#1" expanded="true" />
+            <element signature="e#1400#1401#0" expanded="true" />
+            <element signature="e#1427#1428#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///media/krishna/misc/ub/spring16/ds/projects/tests/SimpleDynamo/app/src/main/java/edu/buffalo/cse/cse486586/simpledynamo/PackageReceiver.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="5.0937157">
+          <caret line="234" column="17" selection-start-line="234" selection-start-column="17" selection-end-line="234" selection-end-column="17" />
+          <folding />
         </state>
       </provider>
     </entry>

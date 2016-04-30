@@ -34,11 +34,10 @@ public class SimpleDynamoProvider extends ContentProvider {
         for (String k : Stash.nodeList.keySet())
 
         {
-            Message msg = new Message();
-            msg.type = "delete";
-            msg.Querytype = "all";
+            Message msg = new Message().DeleteRequest(Stash.portStr,Integer.toString(Stash.nodeList.get(k)));
+
             Log.v("Delete *", "sending to " + Stash.nodeList.get(k));
-            msg.destination = Integer.toString(Stash.nodeList.get(k));
+
             Runnable r = new PackageSender(msg);
             Thread th = new Thread(r);
             th.start();
@@ -58,25 +57,25 @@ public class SimpleDynamoProvider extends ContentProvider {
     public Uri insert(Uri uri, ContentValues values) {
         try {
 
-            String k = values.getAsString("key");
-            String v = values.getAsString("value");
-            // int position = getcorrectNodeId(genHash(k));
-            Message m = new Message();
-            m.key = k;
-            m.value = v;
+            String key = values.getAsString("key");
+            String value = values.getAsString("value");
+            String destination = "";
+
+
             //find right location
-            if (Stash.nodeList.higherEntry(genHash(k)) != null)
-                m.destination = Integer.toString(Stash.nodeList.higherEntry(
-                        genHash(k)).getValue());
+            if (Stash.nodeList.higherEntry(genHash(key)) != null)
+                destination = Integer.toString(Stash.nodeList.higherEntry(
+                        genHash(key)).getValue());
             else
-                m.destination = Integer.toString(Stash.nodeList.firstEntry()
+                destination = Integer.toString(Stash.nodeList.firstEntry()
                         .getValue());
 
 
-            Log.v("Insert provider", " Destination is " + m.destination);
-            m.type = "insert";
-            m.state = "original";
-            m.originalID = m.destination;
+            Log.v("Insert provider", " Destination is " + destination);
+
+
+            Message m = new Message().InsertOriginal(Stash.portStr, destination, key, value);
+
             Stash.table.put(m.key, m);
 
 
@@ -86,173 +85,53 @@ public class SimpleDynamoProvider extends ContentProvider {
             th.setPriority(Thread.MAX_PRIORITY);
             th.start();
 
+            Message m2 = new Message();
+            Message m3 = new Message();
+
             //check destination and find replicas for destination
             if (m.destination.equalsIgnoreCase("5554")) {
-                Message m2 = new Message();
-                m2.key = m.key;
-                m2.value = m.value;
-                m2.type = m.type;
-                m2.rep1 = "5560";
-                m2.rep2 = "5558";
-                m2.originalID = m.destination;
-                m2.destination = "5560";
-                m2.state = "replica";
 
-                //send to first replica
-                Runnable r2 = new PackageSender(m2);
-                Thread th2 = new Thread(r2);
-                Log.v("Replication ", "Sending " + m2.key + "  to "
-                        + m.destination);
-                th2.setPriority(Thread.MAX_PRIORITY);
-                th2.start();
-
-                Message m3 = new Message();
-                m3.key = m.key;
-                m3.value = m.value;
-                m3.type = m.type;
-                m3.originalID = m.destination;
-                m3.destination = "5558";
-                m3.rep1 = "5560";
-                m3.rep2 = "5558";
-                m3.state = "replica";
-                Log.v("Replication ", "Sending " + m3.key + "  to "
-                        + m.destination);
-
-                //send to second replica
-                Runnable r3 = new PackageSender(m3);
-                Thread th3 = new Thread(r3);
-                th3.setPriority(Thread.MAX_PRIORITY);
-                th3.start();
+                m2 = new Message().InsertReplica(Stash.portStr, "5560", m.key, m.value, "5560", "5558");
+                m3 = new Message().InsertReplica(Stash.portStr, "5558", m.key, m.value, "5560", "5558");
 
             } else if (m.destination.equalsIgnoreCase("5556")) {
-
-                Message m2 = new Message();
-                m2.key = m.key;
-                m2.value = m.value;
-                m2.type = m.type;
-                m2.originalID = m.destination;
-                m2.destination = "5558";
-                m2.state = "replica";
-                m2.rep1 = "5554";
-                m2.rep2 = "5558";
-                Log.v("Replication ", "Sending " + m2.key + "  to "
-                        + m.destination);
-                Runnable r2 = new PackageSender(m2);
-                Thread th2 = new Thread(r2);
-                th2.setPriority(Thread.MAX_PRIORITY);
-                th2.start();
-                Message m3 = new Message();
-                m3.key = m.key;
-                m3.value = m.value;
-                m3.type = m.type;
-                m3.state = "replica";
-                m3.originalID = m.destination;
-                m3.destination = "5554";
-                m3.rep1 = "5554";
-                m3.rep2 = "5558";
-                Log.v("Replication ", "Sending " + m3.key + "  to "
-                        + m.destination);
-                Runnable r3 = new PackageSender(m3);
-                Thread th3 = new Thread(r3);
-                th3.setPriority(Thread.MAX_PRIORITY);
-                th3.start();
+                m2 = new Message().InsertReplica(Stash.portStr, "5558", m.key, m.value, "5554", "5558");
+                m3 = new Message().InsertReplica(Stash.portStr, "5554", m.key, m.value, "5554", "5558");
 
             } else if (m.destination.equalsIgnoreCase("5558")) {
-
-                Message m2 = new Message();
-                m2.key = m.key;
-                m2.value = m.value;
-                m2.type = m.type;
-                m2.state = "replica";
-                m2.originalID = m.destination;
-                m2.destination = "5560";
-                m2.rep1 = "5560";
-                m2.rep2 = "5562";
-                Log.v("Replication ", "Sending " + m2.key + "  to "
-                        + m.destination);
-                Runnable r2 = new PackageSender(m2);
-                Thread th2 = new Thread(r2);
-                th2.setPriority(Thread.MAX_PRIORITY);
-                th2.start();
-                Message m3 = new Message();
-                m3.key = m.key;
-                m3.value = m.value;
-                m3.type = m.type;
-                m3.state = "replica";
-                m3.originalID = m.destination;
-                m3.destination = "5562";
-                m3.rep1 = "5562";
-                m3.rep2 = "5560";
-                Log.v("Replication ", "Sending to " + m.destination);
-                Runnable r3 = new PackageSender(m3);
-                Thread th3 = new Thread(r3);
-                th3.setPriority(Thread.MAX_PRIORITY);
-                th3.start();
+                m2 = new Message().InsertReplica(Stash.portStr, "5560", m.key, m.value, "5560", "5562");
+                m3 = new Message().InsertReplica(Stash.portStr, "5562", m.key, m.value, "5560", "5562");
 
             } else if (m.destination.equalsIgnoreCase("5560")) {
 
-                Message m2 = new Message();
-                m2.key = m.key;
-                m2.value = m.value;
-                m2.type = m.type;
-                m2.state = "replica";
-                m2.originalID = m.destination;
-                m2.destination = "5562";
-                m2.rep1 = "5562";
-                m2.rep2 = "5556";
-                Log.v("Replication ", "Sending to " + m.destination);
-                Runnable r2 = new PackageSender(m2);
-                Thread th2 = new Thread(r2);
-                th2.setPriority(Thread.MAX_PRIORITY);
-                th2.start();
-                Message m3 = new Message();
-                m3.key = m.key;
-                m3.value = m.value;
-                m3.type = m.type;
-                m3.state = "replica";
-                m3.originalID = m.destination;
-                m3.destination = "5556";
-                m3.rep1 = "5556";
-                m3.rep2 = "5562";
-                Log.v("Replication ", "Sending to " + m.destination);
-                Runnable r3 = new PackageSender(m3);
-                Thread th3 = new Thread(r3);
-                th3.setPriority(Thread.MAX_PRIORITY);
-                th3.start();
+                m2 = new Message().InsertReplica(Stash.portStr, "5562", m.key, m.value, "5562", "5556");
+                m3 = new Message().InsertReplica(Stash.portStr, "5556", m.key, m.value, "5556", "5562");
 
             } else if (m.destination.equalsIgnoreCase("5562")) {
 
-                Message m2 = new Message();
-                m2.key = m.key;
-                m2.value = m.value;
-                m2.type = m.type;
-                m2.state = "replica";
-                m2.originalID = m.destination;
-                m2.destination = "5554";
-                m2.rep1 = "5556";
-                m2.rep2 = "5554";
-                Log.v("Replication ", "Sending " + m2.key + "  to "
-                        + m.destination);
-                Runnable r2 = new PackageSender(m2);
-                Thread th2 = new Thread(r2);
-                th2.setPriority(Thread.MAX_PRIORITY);
-                th2.start();
-                Message m3 = new Message();
-                m3.key = m.key;
-                m3.value = m.value;
-                m3.type = m.type;
-                m3.state = "replica";
-                m3.originalID = m.destination;
-                m3.destination = "5556";
-                m3.rep1 = "5556";
-                m3.rep2 = "5554";
-                Log.v("Replication ", "Sending to " + m.destination);
-                Runnable r3 = new PackageSender(m3);
-                Thread th3 = new Thread(r3);
-                th3.setPriority(Thread.MAX_PRIORITY);
-                th3.start();
+                m2 = new Message().InsertReplica(Stash.portStr, "5554", m.key, m.value, "5556", "5554");
+                m3 = new Message().InsertReplica(Stash.portStr, "5556", m.key, m.value, "5556", "5554");
 
             }
+
+
+            //send to first replica
+            Log.v("Replication ", "Sending " + m2.key + "  to "
+                    + m.destination);
+            Runnable r2 = new PackageSender(m2);
+            Thread th2 = new Thread(r2);
+
+            th2.setPriority(Thread.MAX_PRIORITY);
+            th2.start();
+
+            //send to second replica
+            Log.v("Replication ", "Sending " + m3.key + "  to "
+                    + m.destination);
+
+            Runnable r3 = new PackageSender(m3);
+            Thread th3 = new Thread(r3);
+            th3.setPriority(Thread.MAX_PRIORITY);
+            th3.start();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -313,19 +192,16 @@ public class SimpleDynamoProvider extends ContentProvider {
             Thread the = new Thread(r);
             the.start();
             Thread.sleep(1000);
+
             synchronized (Stash.sqlite) {
                 //ask for messages
                 for (String k : Stash.nodeList.keySet()) {
-                    Message msg = new Message();
-                    msg.type = "tableReq";
-                    msg.key = "@";
-                    msg.Querytype = "all";
-                    msg.source = Stash.portStr;
+                    Message msg = new Message().RecoveryRequest(Stash.portStr, Integer.toString(Stash.nodeList.get(k)));
+
                     Log.v("Recovery Query *",
                             "sending to " + Stash.nodeList.get(k));
-                    msg.destination = Integer.toString(Stash.nodeList.get(k));
-                    Runnable ro = new PackageSender(msg);
-                    Thread th = new Thread(ro);
+
+                    Thread th = new Thread(new PackageSender(msg));
                     th.setPriority(Thread.MIN_PRIORITY);
 
                     th.start();

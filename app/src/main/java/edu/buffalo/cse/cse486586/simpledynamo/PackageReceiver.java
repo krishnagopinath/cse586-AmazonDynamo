@@ -105,10 +105,8 @@ public class PackageReceiver implements Runnable {
 
     private void sendTable(Message msg2) {
 
-        Message mCursor = new Message();
-        mCursor.destination = msg2.source;
-        mCursor.type = "table";
-        mCursor.hashtable.putAll(Stash.table);
+        Message mCursor = new Message().RecoveryResponse(Stash.portStr, msg2.source, Stash.table);
+
         Runnable r = new PackageSender(mCursor);
         Thread t = new Thread(r);
         t.start();
