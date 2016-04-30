@@ -34,7 +34,7 @@ public class SimpleDynamoProvider extends ContentProvider {
         for (String k : Stash.nodeList.keySet())
 
         {
-            Message msg = new Message().DeleteRequest(Stash.portStr,Integer.toString(Stash.nodeList.get(k)));
+            Message msg = new Message().DeleteRequest(Stash.portStr, Integer.toString(Stash.nodeList.get(k)));
 
             Log.v("Delete *", "sending to " + Stash.nodeList.get(k));
 
@@ -231,13 +231,10 @@ public class SimpleDynamoProvider extends ContentProvider {
                 Stash.tempflag = false;
                 Stash.matcursor = new MatrixCursor(new String[]{"key", "value"});
                 for (String k : Stash.nodeList.keySet()) {
-                    Message msg = new Message();
-                    msg.type = "query";
-                    msg.key = "@";
-                    msg.Querytype = "all";
-                    msg.source = Stash.portStr;
+                    Message msg = new Message().QueryAll(Stash.portStr, Integer.toString(Stash.nodeList.get(k)));
+
                     Log.v("Query *", "sending to " + Stash.nodeList.get(k));
-                    msg.destination = Integer.toString(Stash.nodeList.get(k));
+
                     Runnable r = new PackageSender(msg);
                     Thread th = new Thread(r);
                     th.start();
@@ -254,93 +251,60 @@ public class SimpleDynamoProvider extends ContentProvider {
                 Stash.cursor = null;
                 Stash.tempflag = false;
                 Stash.matcursor = new MatrixCursor(new String[]{"key", "value"});
-                Message msg = new Message();
-                msg.type = "query";
-                msg.key = selection;
 
-                if (Stash.nodeList.higherEntry(genHash(msg.key)) != null)
-                    msg.destination = Integer.toString(Stash.nodeList.higherEntry(
-                            genHash(msg.key)).getValue());
+                String destination = "";
+
+
+                if (Stash.nodeList.higherEntry(genHash(selection)) != null)
+                    destination = Integer.toString(Stash.nodeList.higherEntry(
+                            genHash(selection)).getValue());
                 else
-                    msg.destination = Integer.toString(Stash.nodeList.firstEntry()
+                    destination = Integer.toString(Stash.nodeList.firstEntry()
                             .getValue());
 
-                //ask for query from source
-                msg.source = Stash.portStr;
+
+                Message msg = new Message().QuerySelection(Stash.portStr, destination, selection);
+
                 Log.v("Provider query", "Sending " + selection + " to "
                         + msg.destination);
                 Runnable r = new PackageSender(msg);
                 Thread th = new Thread(r);
                 th.start();
 
+                destination = "";
+
                 //also ask from replicas
                 if (msg.destination.equals("5554")) {
-                    Message m1 = new Message();
-                    m1.key = msg.key;
-                    m1.type = msg.type;
-                    m1.source = msg.source;
-                    m1.destination = "5558";
-                    Log.d("failure query", "Sending replica query to " + m1.destination);
-                    Runnable ro = new PackageSender(m1);
-                    Thread tho = new Thread(ro);
-                    tho.start();
+                    destination = "5558";
                 } else if (msg.destination.equals("5556")) {
-
-                    Message m1 = new Message();
-                    m1.key = msg.key;
-                    m1.type = msg.type;
-                    m1.source = msg.source;
-                    m1.destination = "5554";
-                    Log.d("failure query", "Sending replica query to " + m1.destination);
-                    Runnable ro = new PackageSender(m1);
-                    Thread tho = new Thread(ro);
-                    tho.start();
+                    destination = "5554";
                 } else if (msg.destination.equals("5558")) {
-
-                    Message m1 = new Message();
-                    m1.key = msg.key;
-                    m1.type = msg.type;
-                    m1.source = msg.source;
-                    m1.destination = "5560";
-                    Log.d("failure query", "Sending replica query to " + m1.destination);
-                    Runnable ro = new PackageSender(m1);
-                    Thread tho = new Thread(ro);
-                    tho.start();
+                    destination = "5560";
                 } else if (msg.destination.equals("5560")) {
-                    Message m1 = new Message();
-                    m1.key = msg.key;
-                    m1.type = msg.type;
-                    m1.source = msg.source;
-                    m1.destination = "5562";
-                    Log.d("failure query", "Sending replica query to " + m1.destination);
-                    Runnable ro = new PackageSender(m1);
-                    Thread tho = new Thread(ro);
-                    tho.start();
+                    destination = "5562";
                 } else if (msg.destination.equals("5562")) {
-
-                    Message m1 = new Message();
-                    m1.key = msg.key;
-                    m1.type = msg.type;
-                    m1.source = msg.source;
-                    m1.destination = "5556";
-                    Log.d("failure query", "Sending replica query to " + m1.destination);
-                    Runnable ro = new PackageSender(m1);
-                    Thread tho = new Thread(ro);
-                    tho.start();
+                    destination = "5556";
                 }
-                while (Stash.tempflag == false) {
+
+                Message m1 = new Message().QuerySelectionReplica(msg.source, destination, msg.key);
+                Log.d("failure query", "Sending replica query to " + m1.destination);
+                Runnable ro = new PackageSender(m1);
+                Thread tho = new Thread(ro);
+                tho.start();
+
+                while (!Stash.tempflag) {
                     Thread.sleep(100);
                     wait++;
                     if (wait > 10000) {
                         Log.d(Stash.TAG, "Wait exceeded: " + wait);
                         break;
                     }
-
-
                 }
+
                 wait = 0;
                 Thread.sleep(1000);
                 Stash.matcursor.moveToFirst();
+
                 Log.d("Query result", "Returning " + Stash.matcursor.getString(Stash.matcursor.getColumnIndex("key")));
                 return Stash.matcursor;
             }

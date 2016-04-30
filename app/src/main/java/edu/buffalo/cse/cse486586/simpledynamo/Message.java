@@ -79,5 +79,40 @@ public class Message implements Serializable {
         return this;
     }
 
+    public Message QueryAll(String source, String destination) {
+
+
+        this.source = source;
+        this.destination = destination;
+        this.type = "query";
+        this.key = "@";
+        this.Querytype = "all";
+
+
+        return this;
+    }
+
+    public Message QuerySelection(String source, String destination, String selection) {
+
+
+        this.source = source;
+        this.destination = destination;
+        this.type = "query";
+        this.key = selection;
+
+        return this;
+    }
+
+    public Message QuerySelectionReplica(String source, String destination, String selection) {
+
+        this.source = source;
+        this.destination = destination;
+        this.key = selection;
+        this.type = "query";
+
+
+        return this;
+    }
+
 
 }
