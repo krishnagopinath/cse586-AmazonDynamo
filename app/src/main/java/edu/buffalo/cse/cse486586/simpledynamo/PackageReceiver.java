@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -66,9 +67,11 @@ public class PackageReceiver implements Runnable {
                                 // TODO Auto-generated catch block
                                 e.printStackTrace();
                             }
+
+
+
                             if (position.equalsIgnoreCase(Stash.portStr)
-                                    || position.equalsIgnoreCase(Stash.pred1)
-                                    || position.equalsIgnoreCase(Stash.pred2)) {
+                                    || Arrays.asList(Stash.predecessorMap.get(Stash.portStr)).contains(position)) {
                                 ContentValues cv = new ContentValues();
                                 cv.put("key", ke);
                                 cv.put("value", v);
@@ -106,24 +109,24 @@ public class PackageReceiver implements Runnable {
                     case QUERY_ALL:
 
 
-                            messages = new HashMap<String, String>();
-                            Cursor cursor = Stash.sqlite.query(
-                                    "Msg", new String[]{"key", "value"}, null, null, null, null, null);
+                        messages = new HashMap<String, String>();
+                        Cursor cursor = Stash.sqlite.query(
+                                "Msg", new String[]{"key", "value"}, null, null, null, null, null);
 
 
-                            while (cursor.moveToNext()) {
-                                int key = cursor.getColumnIndex("key");
-                                int value = cursor.getColumnIndex("value");
-                                messages.put(cursor.getString(key),
-                                        cursor.getString(value));
-                            }
+                        while (cursor.moveToNext()) {
+                            int key = cursor.getColumnIndex("key");
+                            int value = cursor.getColumnIndex("value");
+                            messages.put(cursor.getString(key),
+                                    cursor.getString(value));
+                        }
 
 
-                            Log.v("PackageReceiver Query", "Returning cursor");
+                        Log.v("PackageReceiver Query", "Returning cursor");
 
-                            message = new Message(Stash.portStr, msg.source).QueryAllResponse(messages);
+                        message = new Message(Stash.portStr, msg.source).QueryAllResponse(messages);
 
-                            Stash.sendMessage(message);
+                        Stash.sendMessage(message);
 
 
                         break;

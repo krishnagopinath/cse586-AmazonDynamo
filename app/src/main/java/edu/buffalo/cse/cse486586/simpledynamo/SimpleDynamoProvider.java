@@ -1,21 +1,12 @@
 package edu.buffalo.cse.cse486586.simpledynamo;
 
 import java.net.ServerSocket;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Formatter;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.TreeMap;
 
 import android.content.ContentProvider;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.MatrixCursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -31,18 +22,13 @@ public class SimpleDynamoProvider extends ContentProvider {
 
         Stash.sqlite.delete("Msg", null, null);
 
-        for (String k : Stash.nodeList.keySet())
+        //Stash.store.edit().clear().commit();
 
-        {
+        for (String k : Stash.nodeList.keySet()) {
             Message msg = new Message(Stash.portStr, Integer.toString(Stash.nodeList.get(k))).DeleteRequest();
-
             Log.v("Delete *", "sending to " + Stash.nodeList.get(k));
-
-
-
             Stash.sendMessage(msg);
         }
-
 
         return 0;
     }
@@ -63,9 +49,9 @@ public class SimpleDynamoProvider extends ContentProvider {
 
 
             //find right location
-            if (Stash.nodeList.higherEntry(genHash(key)) != null)
+            if (Stash.nodeList.higherEntry(Stash.genHash(key)) != null)
                 destination = Integer.toString(Stash.nodeList.higherEntry(
-                        genHash(key)).getValue());
+                        Stash.genHash(key)).getValue());
             else
                 destination = Integer.toString(Stash.nodeList.firstEntry()
                         .getValue());
@@ -127,79 +113,67 @@ public class SimpleDynamoProvider extends ContentProvider {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            // try{Thread.sleep(6000);}catch(Exception e){}
         }
         return null;
     }
 
     @Override
     public boolean onCreate() {
-        Stash.mydb = new DB(getContext());
-        Stash.sqlite = Stash.mydb.getWritableDatabase();
-        Stash.context = getContext();
-
-
-        Stash.myContentResolver = Stash.context.getContentResolver();
-        TelephonyManager tel = (TelephonyManager) Stash.context
-                .getSystemService(Context.TELEPHONY_SERVICE);
-        Stash.portStr = tel.getLine1Number().substring(
-                tel.getLine1Number().length() - 4);
-
-
-        //set predecessors
-        if (Stash.portStr.equalsIgnoreCase("5554")) {
-            Stash.pred1 = "5556";
-            Stash.pred2 = "5562";
-        }
-        if (Stash.portStr.equalsIgnoreCase("5556")) {
-            Stash.pred1 = "5562";
-            Stash.pred2 = "5560";
-        }
-        if (Stash.portStr.equalsIgnoreCase("5558")) {
-            Stash.pred1 = "5554";
-            Stash.pred2 = "5556";
-        }
-        if (Stash.portStr.equalsIgnoreCase("5560")) {
-            Stash.pred1 = "5558";
-            Stash.pred2 = "5554";
-        }
-        if (Stash.portStr.equalsIgnoreCase("5562")) {
-            Stash.pred1 = "5560";
-            Stash.pred2 = "5558";
-        }
-
-
         try {
+            Stash.mydb = new DB(getContext());
+            Stash.sqlite = Stash.mydb.getWritableDatabase();
+            Stash.context = getContext();
 
-            //generate hashes and keep in nodelist
-            Stash.nodeList.put(genHash(Integer.toString(5554)), 5554);
-            Stash.nodeList.put(genHash(Integer.toString(5556)), 5556);
-            Stash.nodeList.put(genHash(Integer.toString(5558)), 5558);
-            Stash.nodeList.put(genHash(Integer.toString(5560)), 5560);
-            Stash.nodeList.put(genHash(Integer.toString(5562)), 5562);
+            //Stash.store = Stash.context.getSharedPreferences(Stash.PREFS_NAME, 0);
+
+
+            Stash.myContentResolver = Stash.context.getContentResolver();
+            TelephonyManager tel = (TelephonyManager) Stash.context
+                    .getSystemService(Context.TELEPHONY_SERVICE);
+            Stash.portStr = tel.getLine1Number().substring(
+                    tel.getLine1Number().length() - 4);
+
+
+            //generate hashes and keep in nodelist for comparisons (TreeMap is useful for such things)
+            Stash.nodeList.put(Stash.genHash(Integer.toString(5554)), 5554);
+            Stash.nodeList.put(Stash.genHash(Integer.toString(5556)), 5556);
+            Stash.nodeList.put(Stash.genHash(Integer.toString(5558)), 5558);
+            Stash.nodeList.put(Stash.genHash(Integer.toString(5560)), 5560);
+            Stash.nodeList.put(Stash.genHash(Integer.toString(5562)), 5562);
+
+
+            //maintain predecessors of nodes for easy access later
+            Stash.predecessorMap.put("5554", new String[]{"5556", "5562"});
+            Stash.predecessorMap.put("5556", new String[]{"5562", "5560"});
+            Stash.predecessorMap.put("5558", new String[]{"5554", "5556"});
+            Stash.predecessorMap.put("5560", new String[]{"5558", "5554"});
+            Stash.predecessorMap.put("5562", new String[]{"5560", "5558"});
+
+
+            //also maintain successors to save us from redundancy later
+            Stash.successorMap.put("5554", new String[]{"5558", "5560"});
+            Stash.successorMap.put("5556", new String[]{"5554", "5558"});
+            Stash.successorMap.put("5558", new String[]{"5560", "5562"});
+            Stash.successorMap.put("5560", new String[]{"5562", "5556"});
+            Stash.successorMap.put("5562", new String[]{"5556", "5554"});
+
 
             ServerSocket serverSocket = new ServerSocket(10000);
-
             new Thread(new PackageReceiver(serverSocket)).start();
-
-
-
             Thread.sleep(1000);
 
             synchronized (Stash.sqlite) {
                 //ask for messages
                 for (String k : Stash.nodeList.keySet()) {
                     Message msg = new Message(Stash.portStr, Integer.toString(Stash.nodeList.get(k))).RecoveryRequest();
-
-                    Log.v("Recovery Query *",
-                            "sending to " + Stash.nodeList.get(k));
-
+                    Log.v("Recovery Query *", "sending to " + Stash.nodeList.get(k));
                     Stash.sendMessage(msg, Thread.MIN_PRIORITY);
                 }
 
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
         }
         return false;
     }
@@ -243,9 +217,9 @@ public class SimpleDynamoProvider extends ContentProvider {
                 String destination = "";
 
 
-                if (Stash.nodeList.higherEntry(genHash(selection)) != null)
+                if (Stash.nodeList.higherEntry(Stash.genHash(selection)) != null)
                     destination = Integer.toString(Stash.nodeList.higherEntry(
-                            genHash(selection)).getValue());
+                            Stash.genHash(selection)).getValue());
                 else
                     destination = Integer.toString(Stash.nodeList.firstEntry()
                             .getValue());
@@ -259,6 +233,7 @@ public class SimpleDynamoProvider extends ContentProvider {
                 Stash.sendMessage(msg);
 
                 destination = "";
+
 
                 //also ask from replicas
                 if (msg.destination.equals("5554")) {
@@ -306,17 +281,6 @@ public class SimpleDynamoProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
         return 0;
-    }
-
-    private String genHash(String input) throws NoSuchAlgorithmException {
-        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-        byte[] sha1Hash = sha1.digest(input.getBytes());
-        @SuppressWarnings("resource")
-        Formatter formatter = new Formatter();
-        for (byte b : sha1Hash) {
-            formatter.format("%02x", b);
-        }
-        return formatter.toString();
     }
 
 
