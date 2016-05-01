@@ -3,7 +3,6 @@ package edu.buffalo.cse.cse486586.simpledynamo;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.MatrixCursor;
-import android.database.sqlite.SQLiteDatabase;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -14,11 +13,12 @@ import java.util.TreeMap;
 
 public class Stash {
 
-    public static final Object lock = new Object();
+    public static final Object LOCK = new Object();
     public static final String PREFS_NAME = "KeyValueStore";
     public static final String KEY_FIELD = "key";
     public static final String VALUE_FIELD = "value";
     public static final String[] PORTS = new String[]{"5554", "5556", "5558", "5560", "5562"};
+    public static final String SERVER_PORT = "10000";
 
     public static void sendMessage(Message message) {
         Thread t = new Thread(new PackageSender(message));
@@ -34,7 +34,6 @@ public class Stash {
     public static String genHash(String input) throws NoSuchAlgorithmException {
         MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
         byte[] sha1Hash = sha1.digest(input.getBytes());
-        @SuppressWarnings("resource")
         Formatter formatter = new Formatter();
         for (byte b : sha1Hash) {
             formatter.format("%02x", b);

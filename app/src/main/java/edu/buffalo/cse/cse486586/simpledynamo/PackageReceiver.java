@@ -35,7 +35,7 @@ public class PackageReceiver implements Runnable {
 
                 switch (msg.getMessageStage()) {
                     case RECOVERY_REQ:
-                        message = new Message(Stash.portStr, msg.getSource()).RecoveryResponse(Stash.RecoveryMessages);
+                        message = new Message(Stash.portStr, msg.getSender()).RecoveryResponse(Stash.RecoveryMessages);
                         Stash.sendMessage(message);
                         break;
                     case RECOVERY_ACK:
@@ -61,7 +61,7 @@ public class PackageReceiver implements Runnable {
                         break;
 
                     case INSERT_REQ:
-                        synchronized (Stash.lock) {
+                        synchronized (Stash.LOCK) {
                             String key = msg.getKey();
                             String value = msg.getValue();
 
@@ -80,7 +80,7 @@ public class PackageReceiver implements Runnable {
                             messages.put(key, rows.get(key).toString());
                         }
 
-                        message = new Message(Stash.portStr, msg.getSource()).QueryResponse(messages);
+                        message = new Message(Stash.portStr, msg.getSender()).QueryResponse(messages);
                         Stash.sendMessage(message);
                         break;
 
@@ -95,7 +95,7 @@ public class PackageReceiver implements Runnable {
                         mKey = msg.getKey();
                         mValue = "";
 
-                        destination = msg.getSource();
+                        destination = msg.getSender();
 
                         String row = Stash.store.getString(selection, "");
 
@@ -107,7 +107,7 @@ public class PackageReceiver implements Runnable {
 
                         while (mValue.equals("")) {
                             row = Stash.store.getString(selection, "");
-                            destination = msg.getSource();
+                            destination = msg.getSender();
                             mValue = row;
                         }
 

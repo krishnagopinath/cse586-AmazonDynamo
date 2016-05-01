@@ -1,6 +1,8 @@
 package edu.buffalo.cse.cse486586.simpledynamo;
 
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -56,7 +58,7 @@ public class SimpleDynamoProvider extends ContentProvider {
             Stash.sendMessage(m, Thread.MAX_PRIORITY);
 
             //find replicas for destination
-            String[] replicas = Stash.successorMap.get(m.getDestination());
+            String[] replicas = Stash.successorMap.get(m.getReceiver());
 
             Message m2 = new Message(Stash.portStr, replicas[0]).InsertRequest(m.getKey(), m.getValue());
             Message m3 = new Message(Stash.portStr, replicas[1]).InsertRequest(m.getKey(), m.getValue());
@@ -113,12 +115,14 @@ public class SimpleDynamoProvider extends ContentProvider {
                         nodeRing.get((position + 2) % 5)});
             }
 
+            ServerSocket serverSocket = new ServerSocket();
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(Integer.parseInt(Stash.SERVER_PORT)));
 
-            ServerSocket serverSocket = new ServerSocket(10000);
             new Thread(new PackageReceiver(serverSocket)).start();
             Thread.sleep(1000);
 
-            synchronized (Stash.lock) {
+            synchronized (Stash.LOCK) {
                 //ask for messages
                 for (String key : Stash.nodeHashMap.keySet()) {
                     Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(key)).RecoveryRequest();
@@ -172,7 +176,7 @@ public class SimpleDynamoProvider extends ContentProvider {
                 Stash.sendMessage(msg);
 
                 //also ask from replicas
-                destination = Stash.successorMap.get(msg.getDestination())[0];
+                destination = Stash.successorMap.get(msg.getReceiver())[0];
 
                 msg = new Message(Stash.portStr, destination).QuerySelection(selection);
                 Stash.sendMessage(msg);

@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Hashtable;
 
-import android.database.Cursor;
-
 public class Message implements Serializable {
 
     enum Stages {
@@ -30,20 +28,21 @@ public class Message implements Serializable {
 
     }
 
-    private String destination, source;
+    private String sender;
+    private String receiver;
     private Stages MessageStage = Stages.NEW;
-    private String key, value;
+    private String message;
+
     private Hashtable<String, Message> RecoveryMessages = new Hashtable<String, Message>();
     private HashMap<String, String> QueryMessages = new HashMap<String, String>();
 
 
-    public String getSource() {
-        return this.source;
+    public String getSender() {
+        return this.sender;
     }
 
-
-    public String getDestination() {
-        return this.destination;
+    public String getReceiver() {
+        return this.receiver;
     }
 
     public Stages getMessageStage() {
@@ -51,11 +50,17 @@ public class Message implements Serializable {
     }
 
     public String getKey() {
-        return this.key;
+        if (this.message.contains(":")) {
+            return this.message.split(":")[0];
+        }
+        return this.message;
     }
 
     public String getValue() {
-        return this.value;
+        if (this.message.contains(":")) {
+            return this.message.split(":")[1];
+        }
+        return this.message;
     }
 
     public Hashtable<String, Message> getRecoveryMessages() {
@@ -67,10 +72,9 @@ public class Message implements Serializable {
     }
 
     public Message(String source, String destination) {
-        this.source = source;
-        this.destination = destination;
+        this.sender = source;
+        this.receiver = destination;
     }
-
 
     public Message RecoveryRequest() {
         this.MessageStage = Stages.RECOVERY_REQ;
@@ -90,21 +94,18 @@ public class Message implements Serializable {
 
     public Message InsertRequest(String key, String value) {
         this.MessageStage = Stages.INSERT_REQ;
-        this.key = key;
-        this.value = value;
+        this.message = key + ":" + value;
         return this;
     }
 
     public Message QueryAll() {
         this.MessageStage = Stages.QUERY_ALL;
-        this.key = "@";
         return this;
     }
 
-
     public Message QuerySelection(String selection) {
         this.MessageStage = Stages.QUERY_SEL;
-        this.key = selection;
+        this.message = selection;
         return this;
     }
 
@@ -113,6 +114,4 @@ public class Message implements Serializable {
         this.QueryMessages = messages;
         return this;
     }
-
-
 }

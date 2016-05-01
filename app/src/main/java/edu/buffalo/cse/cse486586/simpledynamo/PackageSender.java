@@ -21,7 +21,7 @@ public class PackageSender implements Runnable {
 
         try {
 
-            socket = new Socket(InetAddress.getByAddress(new byte[]{10, 0, 2, 2}), Integer.parseInt(message.getDestination()) * 2);
+            socket = new Socket(InetAddress.getByAddress(new byte[]{10, 0, 2, 2}), Integer.parseInt(message.getReceiver()) * 2);
             socket.setSoTimeout(2000);
             OutputStream outputStream = socket.getOutputStream();
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
