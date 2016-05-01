@@ -6,16 +6,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 public class PackageReceiver implements Runnable {
     ServerSocket serverSocket = null;
     Message msg;
 
-    PackageReceiver(ServerSocket sc) {
-        this.serverSocket = sc;
+    PackageReceiver(ServerSocket serverSocket) {
+        this.serverSocket = serverSocket;
     }
 
     private Socket socket = null;
@@ -82,7 +80,7 @@ public class PackageReceiver implements Runnable {
                             messages.put(key, rows.get(key).toString());
                         }
 
-                        message = new Message(Stash.portStr, msg.getSource()).QueryAllResponse(messages);
+                        message = new Message(Stash.portStr, msg.getSource()).QueryResponse(messages);
                         Stash.sendMessage(message);
                         break;
 
@@ -114,18 +112,17 @@ public class PackageReceiver implements Runnable {
                         }
 
                         messages.put(mKey, mValue);
-                        message = new Message(Stash.portStr, destination).QuerySelectionResponse(mKey, mValue, messages);
+                        message = new Message(Stash.portStr, destination).QueryResponse(messages);
                         Stash.sendMessage(message);
 
                         break;
 
-                    case QUERY_ALL_ACK:
-                    case QUERY_SEL_ACK:
+                    case QUERY_ACK:
 
                         for (String key : msg.getQueryMessages().keySet()) {
-                            if (!msg.getQueryMessages().get("key").equals("")) {
+                            if (!msg.getQueryMessages().get(key).equals("")) {
                                 Stash.matrixCursor.addRow(new Object[]{
-                                        key, msg.getQueryMessages().get("key")
+                                        key, msg.getQueryMessages().get(key)
                                 });
                             }
                         }

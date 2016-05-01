@@ -26,8 +26,7 @@ public class Message implements Serializable {
         //Query
         QUERY_ALL,
         QUERY_SEL,
-        QUERY_ALL_ACK,
-        QUERY_SEL_ACK
+        QUERY_ACK
 
     }
 
@@ -102,11 +101,6 @@ public class Message implements Serializable {
         return this;
     }
 
-    public Message QueryAllResponse(HashMap<String, String> messages) {
-        this.MessageStage = Stages.QUERY_ALL_ACK;
-        this.QueryMessages = messages;
-        return this;
-    }
 
     public Message QuerySelection(String selection) {
         this.MessageStage = Stages.QUERY_SEL;
@@ -114,10 +108,8 @@ public class Message implements Serializable {
         return this;
     }
 
-    public Message QuerySelectionResponse(String key, String value, HashMap<String, String> messages) {
-        this.MessageStage = Stages.QUERY_SEL_ACK;
-        this.key = key;
-        this.value = value;
+    public Message QueryResponse(HashMap<String, String> messages) {
+        this.MessageStage = Stages.QUERY_ACK;
         this.QueryMessages = messages;
         return this;
     }
