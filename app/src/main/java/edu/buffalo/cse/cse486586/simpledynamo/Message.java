@@ -48,77 +48,50 @@ public class Message implements Serializable {
 
 
     public Message RecoveryRequest() {
-
         this.MessageStage = Stages.RECOVERY_REQ;
-
         return this;
     }
-
     public Message RecoveryResponse(Hashtable<String, Message> messages) {
-
         this.MessageStage = Stages.RECOVERY_ACK;
         this.RecoveryMessages = messages;
-
         return this;
     }
-
     public Message DeleteRequest() {
         this.MessageStage = Stages.DELETE_REQ;
-
         return this;
     }
-
     public Message InsertOriginal(String key, String value) {
-
         this.MessageStage = Stages.INSERT_OR;
         this.key = key;
         this.value = value;
-
-
         return this;
     }
-
     public Message InsertReplica(String key, String value, String rep1, String rep2) {
-
         this.MessageStage = Stages.INSERT_REP;
         this.key = key;
         this.value = value;
-
         return this;
     }
-
     public Message QueryAll() {
-
         this.MessageStage = Stages.QUERY_ALL;
         this.key = "@";
-
         return this;
     }
-
     public Message QueryAllResponse(HashMap<String, String> messages) {
-
         this.MessageStage = Stages.QUERY_ALL_ACK;
         this.QueryMessages = messages;
-
         return this;
     }
-
     public Message QuerySelection(String selection) {
-
         this.MessageStage = Stages.QUERY_SEL;
         this.key = selection;
-
         return this;
     }
-
-     public Message QuerySelectionResponse( String key, String value,HashMap<String, String> messages ) {
-
-
+    public Message QuerySelectionResponse( String key, String value,HashMap<String, String> messages ) {
         this.MessageStage = Stages.QUERY_SEL_ACK;
         this.key = key;
         this.value = value;
         this.QueryMessages = messages;
-
         return this;
     }
 

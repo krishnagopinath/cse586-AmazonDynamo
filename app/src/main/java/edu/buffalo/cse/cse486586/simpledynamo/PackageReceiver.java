@@ -4,12 +4,11 @@ import java.io.BufferedInputStream;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import android.content.ContentValues;
@@ -57,17 +56,14 @@ public class PackageReceiver implements Runnable {
                             long id;
                             String position = "";
                             try {
-                                if (Stash.nodeList.higherEntry(genHash(ke)) != null)
-                                    position = Integer.toString(Stash.nodeList.higherEntry(
-                                            genHash(ke)).getValue());
+                                if (Stash.nodeList.higherEntry(Stash.genHash(ke)) != null)
+                                    position = Stash.nodeList.higherEntry(Stash.genHash(ke)).getValue();
                                 else
-                                    position = Integer.toString(Stash.nodeList.firstEntry()
-                                            .getValue());
+                                    position = Stash.nodeList.firstEntry().getValue();
                             } catch (NoSuchAlgorithmException e) {
                                 // TODO Auto-generated catch block
                                 e.printStackTrace();
                             }
-
 
 
                             if (position.equalsIgnoreCase(Stash.portStr)
@@ -78,6 +74,8 @@ public class PackageReceiver implements Runnable {
                                 Stash.sqlite.insertWithOnConflict(
                                         "Msg", null, cv,
                                         SQLiteDatabase.CONFLICT_REPLACE);
+
+                                //Stash.store.edit().putString(ke, v).commit();
                             }
 
                         }
@@ -103,16 +101,15 @@ public class PackageReceiver implements Runnable {
                             id = Stash.sqlite.insertWithOnConflict("Msg", null,
                                     cv, SQLiteDatabase.CONFLICT_REPLACE);
 
+                            //Stash.store.edit().putString(k, v).commit();
+
                             Log.v("Insertion finally done", Long.toString(id));
                         }
                         break;
                     case QUERY_ALL:
-
-
                         messages = new HashMap<String, String>();
                         Cursor cursor = Stash.sqlite.query(
                                 "Msg", new String[]{"key", "value"}, null, null, null, null, null);
-
 
                         while (cursor.moveToNext()) {
                             int key = cursor.getColumnIndex("key");
@@ -120,6 +117,17 @@ public class PackageReceiver implements Runnable {
                             messages.put(cursor.getString(key),
                                     cursor.getString(value));
                         }
+
+
+                        /*
+                            Map<String, ?> rows = Stash.store.getAll();
+
+
+                            for (String key : rows.keySet()) {
+                                messages.put(key,  rows.get(key).toString());
+                            }
+
+                        */
 
 
                         Log.v("PackageReceiver Query", "Returning cursor");
@@ -164,6 +172,7 @@ public class PackageReceiver implements Runnable {
                                 columns, "key = " + "'" + selection + "'", null, null,
                                 null, null);
 
+
                         destination = msg.source;
                         cursor1.moveToNext();
                         int key = cursor1.getColumnIndex("key");
@@ -189,12 +198,32 @@ public class PackageReceiver implements Runnable {
                             mValue = cursor1.getString(value);
                         }
 
+
+                    /*
+                        String row = Stash.store.getString(selection, "");
+
+                        if(!row.equals("")) {
+                            mValue = row;
+                        } else {
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        while (mValue.equals("")) {
+                            row = Stash.store.getString(selection, "");
+                            destination = msg.source;
+                            mValue = row;
+                        }
+                    */
+
                         Log.v("PackageReceiverQuery", "Key :" + mKey + " Value: "
                                 + mValue + " in " + Stash.portStr);
 
 
                         messages.put(mKey, mValue);
-
                         message = new Message(Stash.portStr, destination).QuerySelectionResponse(mKey, mValue, messages);
 
                         Log.v("PackageReceiver Query", "Returning cursor");
@@ -231,18 +260,4 @@ public class PackageReceiver implements Runnable {
             e.printStackTrace();
         }
     }
-
-
-    private String genHash(String input) throws NoSuchAlgorithmException {
-        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-        byte[] sha1Hash = sha1.digest(input.getBytes());
-        @SuppressWarnings("resource")
-        Formatter formatter = new Formatter();
-        for (byte b : sha1Hash) {
-            formatter.format("%02x", b);
-        }
-        return formatter.toString();
-    }
-
-
 }

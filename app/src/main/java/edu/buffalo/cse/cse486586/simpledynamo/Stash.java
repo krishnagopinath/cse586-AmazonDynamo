@@ -23,7 +23,6 @@ import java.util.TreeMap;
 public class Stash {
 
 
-
     public static Context context;
     public static ContentResolver myContentResolver;
 
@@ -45,6 +44,15 @@ public class Stash {
 
     public static final String TAG = SimpleDynamoProvider.class.getSimpleName();
     public static final String PREFS_NAME = "KeyValueStore";
+    public static final String KEY_FIELD = "key";
+    public static final String VALUE_FIELD = "value";
+    public static final String[] PORTS = new String[]{
+            "5554",
+            "5556",
+            "5558",
+            "5560",
+            "5562"
+    };
 
     public static void sendMessage(Message message) {
         Thread t = new Thread(new PackageSender(message));
@@ -69,12 +77,11 @@ public class Stash {
         return formatter.toString();
     }
 
-    public static TreeMap<String, Integer> nodeList = new TreeMap<String, Integer>();
+    public static TreeMap<String, String> nodeList = new TreeMap<String, String>();
     public static HashMap<String, String[]> predecessorMap = new HashMap<String, String[]>();
     public static HashMap<String, String[]> successorMap = new HashMap<String, String[]>();
 
     public static SharedPreferences store;
-
 
 
 }

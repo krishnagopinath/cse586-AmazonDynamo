@@ -1,6 +1,8 @@
 package edu.buffalo.cse.cse486586.simpledynamo;
 
 import java.net.ServerSocket;
+import java.util.LinkedList;
+import java.util.Map;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -25,7 +27,7 @@ public class SimpleDynamoProvider extends ContentProvider {
         //Stash.store.edit().clear().commit();
 
         for (String k : Stash.nodeList.keySet()) {
-            Message msg = new Message(Stash.portStr, Integer.toString(Stash.nodeList.get(k))).DeleteRequest();
+            Message msg = new Message(Stash.portStr, Stash.nodeList.get(k)).DeleteRequest();
             Log.v("Delete *", "sending to " + Stash.nodeList.get(k));
             Stash.sendMessage(msg);
         }
@@ -50,11 +52,9 @@ public class SimpleDynamoProvider extends ContentProvider {
 
             //find right location
             if (Stash.nodeList.higherEntry(Stash.genHash(key)) != null)
-                destination = Integer.toString(Stash.nodeList.higherEntry(
-                        Stash.genHash(key)).getValue());
+                destination = Stash.nodeList.higherEntry(Stash.genHash(key)).getValue();
             else
-                destination = Integer.toString(Stash.nodeList.firstEntry()
-                        .getValue());
+                destination = Stash.nodeList.firstEntry().getValue();
 
 
             Log.v("Insert provider", " Destination is " + destination);
@@ -68,35 +68,13 @@ public class SimpleDynamoProvider extends ContentProvider {
             //insert it in destination first
             Stash.sendMessage(m, Thread.MAX_PRIORITY);
 
-            Message m2 = null;
-            Message m3 = null;
 
-            //check destination and find replicas for destination
-            if (m.destination.equalsIgnoreCase("5554")) {
+            //find replicas for destination
 
-                m2 = new Message(Stash.portStr, "5560").InsertReplica(m.key, m.value, "5560", "5558");
-                m3 = new Message(Stash.portStr, "5558").InsertReplica(m.key, m.value, "5560", "5558");
+            String[] replicas = Stash.successorMap.get(m.destination);
 
-            } else if (m.destination.equalsIgnoreCase("5556")) {
-                m2 = new Message(Stash.portStr, "5558").InsertReplica(m.key, m.value, "5554", "5558");
-                m3 = new Message(Stash.portStr, "5554").InsertReplica(m.key, m.value, "5554", "5558");
-
-            } else if (m.destination.equalsIgnoreCase("5558")) {
-                m2 = new Message(Stash.portStr, "5560").InsertReplica(m.key, m.value, "5560", "5562");
-                m3 = new Message(Stash.portStr, "5562").InsertReplica(m.key, m.value, "5560", "5562");
-
-            } else if (m.destination.equalsIgnoreCase("5560")) {
-
-                m2 = new Message(Stash.portStr, "5562").InsertReplica(m.key, m.value, "5562", "5556");
-                m3 = new Message(Stash.portStr, "5556").InsertReplica(m.key, m.value, "5556", "5562");
-
-            } else if (m.destination.equalsIgnoreCase("5562")) {
-
-                m2 = new Message(Stash.portStr, "5554").InsertReplica(m.key, m.value, "5556", "5554");
-                m3 = new Message(Stash.portStr, "5556").InsertReplica(m.key, m.value, "5556", "5554");
-
-            }
-
+            Message m2 = new Message(Stash.portStr, replicas[0]).InsertReplica(m.key, m.value, replicas[0], replicas[1]);
+            Message m3 = new Message(Stash.portStr, replicas[1]).InsertReplica(m.key, m.value, replicas[0], replicas[1]);
 
             //send to first replica
             Log.v("Replication ", "Sending " + m2.key + "  to "
@@ -112,7 +90,6 @@ public class SimpleDynamoProvider extends ContentProvider {
 
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
         }
         return null;
     }
@@ -120,27 +97,31 @@ public class SimpleDynamoProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         try {
-            Stash.mydb = new DB(getContext());
-            Stash.sqlite = Stash.mydb.getWritableDatabase();
             Stash.context = getContext();
 
-            //Stash.store = Stash.context.getSharedPreferences(Stash.PREFS_NAME, 0);
+            Stash.sqlite = new DB(Stash.context).getWritableDatabase();
+            Stash.store = Stash.context.getSharedPreferences(Stash.PREFS_NAME, 0);
 
 
-            Stash.myContentResolver = Stash.context.getContentResolver();
             TelephonyManager tel = (TelephonyManager) Stash.context
                     .getSystemService(Context.TELEPHONY_SERVICE);
             Stash.portStr = tel.getLine1Number().substring(
                     tel.getLine1Number().length() - 4);
 
+            /*NodeList : 5562 --> 5556 --> 5554 --> 5558 --> 5560*/
+            //set up ring structure for later use
+            LinkedList<String> nodeRing = new LinkedList<String>();
+            nodeRing.add("5562");
+            nodeRing.add("5556");
+            nodeRing.add("5554");
+            nodeRing.add("5558");
+            nodeRing.add("5560");
+
 
             //generate hashes and keep in nodelist for comparisons (TreeMap is useful for such things)
-            Stash.nodeList.put(Stash.genHash(Integer.toString(5554)), 5554);
-            Stash.nodeList.put(Stash.genHash(Integer.toString(5556)), 5556);
-            Stash.nodeList.put(Stash.genHash(Integer.toString(5558)), 5558);
-            Stash.nodeList.put(Stash.genHash(Integer.toString(5560)), 5560);
-            Stash.nodeList.put(Stash.genHash(Integer.toString(5562)), 5562);
-
+            for (int i = 0; i < Stash.PORTS.length; i++) {
+                Stash.nodeList.put(Stash.genHash(Stash.PORTS[i]), Stash.PORTS[i]);
+            }
 
             //maintain predecessors of nodes for easy access later
             Stash.predecessorMap.put("5554", new String[]{"5556", "5562"});
@@ -165,7 +146,7 @@ public class SimpleDynamoProvider extends ContentProvider {
             synchronized (Stash.sqlite) {
                 //ask for messages
                 for (String k : Stash.nodeList.keySet()) {
-                    Message msg = new Message(Stash.portStr, Integer.toString(Stash.nodeList.get(k))).RecoveryRequest();
+                    Message msg = new Message(Stash.portStr, Stash.nodeList.get(k)).RecoveryRequest();
                     Log.v("Recovery Query *", "sending to " + Stash.nodeList.get(k));
                     Stash.sendMessage(msg, Thread.MIN_PRIORITY);
                 }
@@ -188,14 +169,29 @@ public class SimpleDynamoProvider extends ContentProvider {
             if (selection.equals("@")) {
                 Stash.table.clear();
                 Thread.sleep(6000);
+
                 return Stash.sqlite.query("Msg", null, null, null, null, null, null);
+
+                /*
+                Map<String, ?> rows = Stash.store.getAll();
+
+                MatrixCursor cursor = new MatrixCursor(new String[]{Stash.KEY_FIELD, Stash.VALUE_FIELD});
+
+                for (String key : rows.keySet()) {
+                    cursor.addRow(new Object[]{key, rows.get(key).toString()});
+                }
+
+                return cursor;
+                */
+
+
             }
             if (selection.equals("*")) {
                 Stash.cursor = null;
                 Stash.tempflag = false;
                 Stash.matcursor = new MatrixCursor(new String[]{"key", "value"});
                 for (String k : Stash.nodeList.keySet()) {
-                    Message msg = new Message(Stash.portStr, Integer.toString(Stash.nodeList.get(k))).QueryAll();
+                    Message msg = new Message(Stash.portStr, Stash.nodeList.get(k)).QueryAll();
 
                     Log.v("Query *", "sending to " + Stash.nodeList.get(k));
 
@@ -218,11 +214,9 @@ public class SimpleDynamoProvider extends ContentProvider {
 
 
                 if (Stash.nodeList.higherEntry(Stash.genHash(selection)) != null)
-                    destination = Integer.toString(Stash.nodeList.higherEntry(
-                            Stash.genHash(selection)).getValue());
+                    destination = Stash.nodeList.higherEntry(Stash.genHash(selection)).getValue();
                 else
-                    destination = Integer.toString(Stash.nodeList.firstEntry()
-                            .getValue());
+                    destination = Stash.nodeList.firstEntry().getValue();
 
 
                 Message msg = new Message(Stash.portStr, destination).QuerySelection(selection);
@@ -232,21 +226,10 @@ public class SimpleDynamoProvider extends ContentProvider {
 
                 Stash.sendMessage(msg);
 
-                destination = "";
-
 
                 //also ask from replicas
-                if (msg.destination.equals("5554")) {
-                    destination = "5558";
-                } else if (msg.destination.equals("5556")) {
-                    destination = "5554";
-                } else if (msg.destination.equals("5558")) {
-                    destination = "5560";
-                } else if (msg.destination.equals("5560")) {
-                    destination = "5562";
-                } else if (msg.destination.equals("5562")) {
-                    destination = "5556";
-                }
+                destination = Stash.successorMap.get(msg.destination)[0];
+
 
                 Message m1 = new Message(msg.source, destination).QuerySelection(selection);
                 Log.d("failure query", "Sending replica query to " + m1.destination);
