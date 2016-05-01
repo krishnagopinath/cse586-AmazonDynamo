@@ -71,8 +71,8 @@ public class PackageReceiver implements Runnable {
     private void copyContents2(Message msg2) {
 
         for (String k : msg2.hashtable.keySet()) {
-            Message m = new Message();
-            m = msg2.hashtable.get(k);
+            Message m = msg2.hashtable.get(k);
+
             String ke = m.key;
             String v = m.value;
 
@@ -106,7 +106,7 @@ public class PackageReceiver implements Runnable {
 
     private void sendTable(Message msg2) {
 
-        Message mCursor = new Message().RecoveryResponse(Stash.portStr, msg2.source, Stash.table);
+        Message mCursor = new Message(Stash.portStr, msg2.source).RecoveryResponse(Stash.table);
 
         Runnable r = new PackageSender(mCursor);
         Thread t = new Thread(r);
@@ -204,7 +204,7 @@ public class PackageReceiver implements Runnable {
 
             messages.put(mKey, mValue);
 
-            Message message = new Message().QuerySelectionResponse(Stash.portStr, destination, mKey, mValue, messages);
+            Message message = new Message(Stash.portStr, destination).QuerySelectionResponse(mKey, mValue, messages);
 
             Log.v("PackageReceiver Query", "Returning cursor");
             Runnable r = new PackageSender(message);
@@ -229,7 +229,7 @@ public class PackageReceiver implements Runnable {
 
                 Log.v("PackageReceiver Query", "Returning cursor");
 
-                Message message = new Message().QueryAllResponse(Stash.portStr, msg2.source, messages);
+                Message message = new Message(Stash.portStr, msg2.source).QueryAllResponse(messages);
 
                 Runnable r = new PackageSender(message);
                 Thread th = new Thread(r);

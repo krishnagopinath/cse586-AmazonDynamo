@@ -34,7 +34,7 @@ public class SimpleDynamoProvider extends ContentProvider {
         for (String k : Stash.nodeList.keySet())
 
         {
-            Message msg = new Message().DeleteRequest(Stash.portStr, Integer.toString(Stash.nodeList.get(k)));
+            Message msg = new Message(Stash.portStr, Integer.toString(Stash.nodeList.get(k))).DeleteRequest();
 
             Log.v("Delete *", "sending to " + Stash.nodeList.get(k));
 
@@ -74,7 +74,7 @@ public class SimpleDynamoProvider extends ContentProvider {
             Log.v("Insert provider", " Destination is " + destination);
 
 
-            Message m = new Message().InsertOriginal(Stash.portStr, destination, key, value);
+            Message m = new Message(Stash.portStr, destination).InsertOriginal(key, value);
 
             Stash.table.put(m.key, m);
 
@@ -85,32 +85,32 @@ public class SimpleDynamoProvider extends ContentProvider {
             th.setPriority(Thread.MAX_PRIORITY);
             th.start();
 
-            Message m2 = new Message();
-            Message m3 = new Message();
+            Message m2 = null;
+            Message m3 = null;
 
             //check destination and find replicas for destination
             if (m.destination.equalsIgnoreCase("5554")) {
 
-                m2 = new Message().InsertReplica(Stash.portStr, "5560", m.key, m.value, "5560", "5558");
-                m3 = new Message().InsertReplica(Stash.portStr, "5558", m.key, m.value, "5560", "5558");
+                m2 = new Message(Stash.portStr, "5560").InsertReplica(m.key, m.value, "5560", "5558");
+                m3 = new Message(Stash.portStr, "5558").InsertReplica(m.key, m.value, "5560", "5558");
 
             } else if (m.destination.equalsIgnoreCase("5556")) {
-                m2 = new Message().InsertReplica(Stash.portStr, "5558", m.key, m.value, "5554", "5558");
-                m3 = new Message().InsertReplica(Stash.portStr, "5554", m.key, m.value, "5554", "5558");
+                m2 = new Message(Stash.portStr, "5558").InsertReplica(m.key, m.value, "5554", "5558");
+                m3 = new Message(Stash.portStr, "5554").InsertReplica(m.key, m.value, "5554", "5558");
 
             } else if (m.destination.equalsIgnoreCase("5558")) {
-                m2 = new Message().InsertReplica(Stash.portStr, "5560", m.key, m.value, "5560", "5562");
-                m3 = new Message().InsertReplica(Stash.portStr, "5562", m.key, m.value, "5560", "5562");
+                m2 = new Message(Stash.portStr, "5560").InsertReplica(m.key, m.value, "5560", "5562");
+                m3 = new Message(Stash.portStr, "5562").InsertReplica(m.key, m.value, "5560", "5562");
 
             } else if (m.destination.equalsIgnoreCase("5560")) {
 
-                m2 = new Message().InsertReplica(Stash.portStr, "5562", m.key, m.value, "5562", "5556");
-                m3 = new Message().InsertReplica(Stash.portStr, "5556", m.key, m.value, "5556", "5562");
+                m2 = new Message(Stash.portStr, "5562").InsertReplica(m.key, m.value, "5562", "5556");
+                m3 = new Message(Stash.portStr, "5556").InsertReplica(m.key, m.value, "5556", "5562");
 
             } else if (m.destination.equalsIgnoreCase("5562")) {
 
-                m2 = new Message().InsertReplica(Stash.portStr, "5554", m.key, m.value, "5556", "5554");
-                m3 = new Message().InsertReplica(Stash.portStr, "5556", m.key, m.value, "5556", "5554");
+                m2 = new Message(Stash.portStr, "5554").InsertReplica(m.key, m.value, "5556", "5554");
+                m3 = new Message(Stash.portStr, "5556").InsertReplica(m.key, m.value, "5556", "5554");
 
             }
 
@@ -196,7 +196,7 @@ public class SimpleDynamoProvider extends ContentProvider {
             synchronized (Stash.sqlite) {
                 //ask for messages
                 for (String k : Stash.nodeList.keySet()) {
-                    Message msg = new Message().RecoveryRequest(Stash.portStr, Integer.toString(Stash.nodeList.get(k)));
+                    Message msg = new Message(Stash.portStr, Integer.toString(Stash.nodeList.get(k))).RecoveryRequest();
 
                     Log.v("Recovery Query *",
                             "sending to " + Stash.nodeList.get(k));
@@ -231,7 +231,7 @@ public class SimpleDynamoProvider extends ContentProvider {
                 Stash.tempflag = false;
                 Stash.matcursor = new MatrixCursor(new String[]{"key", "value"});
                 for (String k : Stash.nodeList.keySet()) {
-                    Message msg = new Message().QueryAll(Stash.portStr, Integer.toString(Stash.nodeList.get(k)));
+                    Message msg = new Message(Stash.portStr, Integer.toString(Stash.nodeList.get(k))).QueryAll();
 
                     Log.v("Query *", "sending to " + Stash.nodeList.get(k));
 
@@ -263,7 +263,7 @@ public class SimpleDynamoProvider extends ContentProvider {
                             .getValue());
 
 
-                Message msg = new Message().QuerySelection(Stash.portStr, destination, selection);
+                Message msg = new Message(Stash.portStr, destination).QuerySelection(selection);
 
                 Log.v("Provider query", "Sending " + selection + " to "
                         + msg.destination);
@@ -286,7 +286,7 @@ public class SimpleDynamoProvider extends ContentProvider {
                     destination = "5556";
                 }
 
-                Message m1 = new Message().QuerySelectionReplica(msg.source, destination, msg.key);
+                Message m1 = new Message(msg.source, destination).QuerySelectionReplica(msg.key);
                 Log.d("failure query", "Sending replica query to " + m1.destination);
                 Runnable ro = new PackageSender(m1);
                 Thread tho = new Thread(ro);
