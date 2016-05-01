@@ -4,11 +4,9 @@ import java.io.BufferedInputStream;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import android.content.ContentValues;
@@ -43,67 +41,53 @@ public class PackageReceiver implements Runnable {
 
                 switch (msg.MessageStage) {
                     case RECOVERY_REQ:
-                        message = new Message(Stash.portStr, msg.source).RecoveryResponse(Stash.table);
+                        message = new Message(Stash.portStr, msg.source).RecoveryResponse(Stash.RecoveryMessages);
                         Stash.sendMessage(message);
                         break;
                     case RECOVERY_ACK:
                         for (String k : msg.RecoveryMessages.keySet()) {
-                            Message m = msg.RecoveryMessages.get(k);
+                            Message recoveryMessage = msg.RecoveryMessages.get(k);
 
-                            String ke = m.key;
-                            String v = m.value;
+                            String key = recoveryMessage.key;
+                            String value = recoveryMessage.value;
 
-                            long id;
-                            String position = "";
-                            try {
-                                if (Stash.nodeList.higherEntry(Stash.genHash(ke)) != null)
-                                    position = Stash.nodeList.higherEntry(Stash.genHash(ke)).getValue();
-                                else
-                                    position = Stash.nodeList.firstEntry().getValue();
-                            } catch (NoSuchAlgorithmException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
+                            String position = Stash.getPosition(key);
 
 
                             if (position.equalsIgnoreCase(Stash.portStr)
                                     || Arrays.asList(Stash.predecessorMap.get(Stash.portStr)).contains(position)) {
-                                ContentValues cv = new ContentValues();
-                                cv.put("key", ke);
-                                cv.put("value", v);
-                                Stash.sqlite.insertWithOnConflict(
-                                        "Msg", null, cv,
-                                        SQLiteDatabase.CONFLICT_REPLACE);
 
-                                //Stash.store.edit().putString(ke, v).commit();
+                                ContentValues cv = new ContentValues();
+                                cv.put("key", key);
+                                cv.put("value", value);
+                                Stash.sqlite.insertWithOnConflict("Msg", null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+
+                                //Stash.store.edit().putString(key, value).commit();
                             }
 
                         }
                         break;
                     case DELETE_REQ:
                         Stash.sqlite.delete("Msg", null, null);
+                        //Stash.store.edit().clear().commit();
                         break;
                     case INSERT_OR:
                     case INSERT_REP:
                         long id = 0;
 
                         synchronized (Stash.sqlite) {
-                            String k = msg.key;
-                            String v = msg.value;
+                            String key = msg.key;
+                            String value = msg.value;
                             ContentValues cv = new ContentValues();
-                            cv.put("key", k);
-                            cv.put("value", v);
-                            Log.v("Insert", "Insert received at "
-                                    + Stash.portStr);
-                            Log.v("Insert", k + " =key " + v + " =value" + " State= "
-                                    + msg.MessageStage);
-                            Stash.table.put(k, msg);
+                            cv.put("key", key);
+                            cv.put("value", value);
+
+                            Stash.RecoveryMessages.put(key, msg);
                             id = Stash.sqlite.insertWithOnConflict("Msg", null,
                                     cv, SQLiteDatabase.CONFLICT_REPLACE);
 
-                            //Stash.store.edit().putString(k, v).commit();
+                            //Stash.store.edit().putString(key, value).commit();
 
-                            Log.v("Insertion finally done", Long.toString(id));
                         }
                         break;
                     case QUERY_ALL:
@@ -130,30 +114,23 @@ public class PackageReceiver implements Runnable {
                         */
 
 
-                        Log.v("PackageReceiver Query", "Returning cursor");
-
                         message = new Message(Stash.portStr, msg.source).QueryAllResponse(messages);
-
                         Stash.sendMessage(message);
 
 
                         break;
 
                     case QUERY_ALL_ACK:
-                        Stash.hashmapstar.putAll(msg.QueryMessages);
-                        Log.v("PackageReceiver Query", "hashmap updated " + msg.QueryMessages);
                         Iterator<Entry<String, String>> it = msg.QueryMessages.entrySet().iterator();
-                        Log.v("Provider query", "hashmap here " + msg.QueryMessages);
                         while (it.hasNext()) {
-                            @SuppressWarnings("rawtypes")
-                            Entry pairs = (Entry) it.next();
-                            Stash.matcursor.addRow(new Object[]{
-                                    pairs.getKey(), pairs.getValue()});
-                            Log.v("provider query", "matcursor updated " + pairs.getValue());
+                            Entry entry = it.next();
+                            Stash.matrixCursor.addRow(new Object[]{
+                                    entry.getKey(),
+                                    entry.getValue()
+                            });
 
                         }
-                        Stash.tempflag = true;
-                        Log.v("PackageReceiver query", "Cursor updated lock released");
+                        Stash.waitFlagger = true;
                         break;
 
                     case QUERY_SEL:
@@ -219,36 +196,25 @@ public class PackageReceiver implements Runnable {
                         }
                     */
 
-                        Log.v("PackageReceiverQuery", "Key :" + mKey + " Value: "
-                                + mValue + " in " + Stash.portStr);
-
-
                         messages.put(mKey, mValue);
                         message = new Message(Stash.portStr, destination).QuerySelectionResponse(mKey, mValue, messages);
-
-                        Log.v("PackageReceiver Query", "Returning cursor");
 
 
                         Stash.sendMessage(message);
                         break;
                     case QUERY_SEL_ACK:
-                        Stash.hashmap.putAll(msg.QueryMessages);
-                        Log.v("PackageReceiver Query", "hashmap updated " + msg.QueryMessages);
                         Iterator<Entry<String, String>> it1 = msg.QueryMessages.entrySet()
                                 .iterator();
-                        Log.v("Provider query", "hashmap here " + msg.QueryMessages);
                         while (it1.hasNext()) {
-                            @SuppressWarnings("rawtypes")
+
                             Entry pairs = (Entry) it1.next();
                             if (!(pairs.getValue().equals(""))) {
-                                Stash.matcursor.addRow(new Object[]{
+                                Stash.matrixCursor.addRow(new Object[]{
                                         pairs.getKey(), pairs.getValue()});
                             }
-                            Log.v("provider query", "matcursor updated " + pairs.getKey());
 
                         }
-                        Stash.tempflag = true;
-                        Log.v("PackageReceiver query", "Cursor updated lock released");
+                        Stash.waitFlagger = true;
                         break;
 
 
