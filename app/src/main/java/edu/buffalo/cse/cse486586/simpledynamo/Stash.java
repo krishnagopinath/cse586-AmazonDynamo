@@ -44,9 +44,15 @@ public class Stash {
         return uriBuilder.build();
     }
 
+
     public static void sendMessage(Message message) {
-        Runnable r = new PackageSender(message);
-        Thread t = new Thread(r);
+        Thread t = new Thread(new PackageSender(message));
+        t.start();
+    }
+
+    public static void sendMessage(Message message, Integer priority) {
+        Thread t = new Thread(new PackageSender(message));
+        t.setPriority(priority);
         t.start();
     }
 }

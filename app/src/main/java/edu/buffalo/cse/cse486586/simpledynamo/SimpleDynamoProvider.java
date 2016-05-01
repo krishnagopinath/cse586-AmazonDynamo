@@ -38,9 +38,9 @@ public class SimpleDynamoProvider extends ContentProvider {
 
             Log.v("Delete *", "sending to " + Stash.nodeList.get(k));
 
-            Runnable r = new PackageSender(msg);
-            Thread th = new Thread(r);
-            th.start();
+
+
+            Stash.sendMessage(msg);
         }
 
 
@@ -80,10 +80,7 @@ public class SimpleDynamoProvider extends ContentProvider {
 
 
             //insert it in destination first
-            Runnable r = new PackageSender(m);
-            Thread th = new Thread(r);
-            th.setPriority(Thread.MAX_PRIORITY);
-            th.start();
+            Stash.sendMessage(m, Thread.MAX_PRIORITY);
 
             Message m2 = null;
             Message m3 = null;
@@ -118,20 +115,14 @@ public class SimpleDynamoProvider extends ContentProvider {
             //send to first replica
             Log.v("Replication ", "Sending " + m2.key + "  to "
                     + m.destination);
-            Runnable r2 = new PackageSender(m2);
-            Thread th2 = new Thread(r2);
 
-            th2.setPriority(Thread.MAX_PRIORITY);
-            th2.start();
+            Stash.sendMessage(m2, Thread.MAX_PRIORITY);
 
             //send to second replica
             Log.v("Replication ", "Sending " + m3.key + "  to "
                     + m.destination);
 
-            Runnable r3 = new PackageSender(m3);
-            Thread th3 = new Thread(r3);
-            th3.setPriority(Thread.MAX_PRIORITY);
-            th3.start();
+            Stash.sendMessage(m3, Thread.MAX_PRIORITY);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -188,9 +179,11 @@ public class SimpleDynamoProvider extends ContentProvider {
             Stash.nodeList.put(genHash(Integer.toString(5562)), 5562);
 
             ServerSocket serverSocket = new ServerSocket(10000);
-            Runnable r = new PackageReceiver(serverSocket);
-            Thread the = new Thread(r);
-            the.start();
+
+            new Thread(new PackageReceiver(serverSocket)).start();
+
+
+
             Thread.sleep(1000);
 
             synchronized (Stash.sqlite) {
@@ -201,10 +194,7 @@ public class SimpleDynamoProvider extends ContentProvider {
                     Log.v("Recovery Query *",
                             "sending to " + Stash.nodeList.get(k));
 
-                    Thread th = new Thread(new PackageSender(msg));
-                    th.setPriority(Thread.MIN_PRIORITY);
-
-                    th.start();
+                    Stash.sendMessage(msg, Thread.MIN_PRIORITY);
                 }
 
             }
@@ -235,9 +225,7 @@ public class SimpleDynamoProvider extends ContentProvider {
 
                     Log.v("Query *", "sending to " + Stash.nodeList.get(k));
 
-                    Runnable r = new PackageSender(msg);
-                    Thread th = new Thread(r);
-                    th.start();
+                    Stash.sendMessage(msg);
                 }
                 Thread.sleep(6000);
 
@@ -267,9 +255,8 @@ public class SimpleDynamoProvider extends ContentProvider {
 
                 Log.v("Provider query", "Sending " + selection + " to "
                         + msg.destination);
-                Runnable r = new PackageSender(msg);
-                Thread th = new Thread(r);
-                th.start();
+
+                Stash.sendMessage(msg);
 
                 destination = "";
 
@@ -288,9 +275,8 @@ public class SimpleDynamoProvider extends ContentProvider {
 
                 Message m1 = new Message(msg.source, destination).QuerySelection(selection);
                 Log.d("failure query", "Sending replica query to " + m1.destination);
-                Runnable ro = new PackageSender(m1);
-                Thread tho = new Thread(ro);
-                tho.start();
+
+                Stash.sendMessage(m1);
 
                 while (!Stash.tempflag) {
                     Thread.sleep(100);

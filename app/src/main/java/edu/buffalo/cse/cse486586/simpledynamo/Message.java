@@ -41,7 +41,6 @@ public class Message implements Serializable {
     HashMap<String, String> QueryMessages = new HashMap<String, String>();
 
 
-
     public Message(String source, String destination) {
         this.source = source;
         this.destination = destination;
