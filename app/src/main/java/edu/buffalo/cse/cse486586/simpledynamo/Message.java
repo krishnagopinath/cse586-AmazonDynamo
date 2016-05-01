@@ -9,15 +9,11 @@ import android.database.Cursor;
 public class Message implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    String type, subtype;
-    String key, value;
-    String destination, source, rep1, rep2;
-    String Querytype = "basic";
-    String state, originalID;
-    HashMap<String, String> hashmap = new HashMap<String, String>();
-    Hashtable<String, Message> hashtable = new Hashtable<String, Message>();
 
     enum Stages {
+
+        //Default
+        NEW,
 
         //Recovery
         RECOVERY_REQ,
@@ -38,6 +34,14 @@ public class Message implements Serializable {
 
     }
 
+    String destination, source;
+    Stages MessageStage = Stages.NEW;
+    String key, value;
+    Hashtable<String, Message> RecoveryMessages = new Hashtable<String, Message>();
+    HashMap<String, String> QueryMessages = new HashMap<String, String>();
+
+
+
     public Message(String source, String destination) {
         this.source = source;
         this.destination = destination;
@@ -46,100 +50,75 @@ public class Message implements Serializable {
 
     public Message RecoveryRequest() {
 
-        this.type = "tableReq";
-        this.key = "@";
-        this.Querytype = "all";
-
+        this.MessageStage = Stages.RECOVERY_REQ;
 
         return this;
     }
 
     public Message RecoveryResponse(Hashtable<String, Message> messages) {
-        this.type = "table";
-        this.hashtable.putAll(messages);
+
+        this.MessageStage = Stages.RECOVERY_ACK;
+        this.RecoveryMessages = messages;
 
         return this;
     }
 
     public Message DeleteRequest() {
-        this.type = "delete";
-        this.Querytype = "all";
+        this.MessageStage = Stages.DELETE_REQ;
 
         return this;
     }
 
     public Message InsertOriginal(String key, String value) {
 
+        this.MessageStage = Stages.INSERT_OR;
         this.key = key;
         this.value = value;
-        this.type = "insert";
-        this.state = "original";
-        this.originalID = destination;
 
 
         return this;
     }
 
     public Message InsertReplica(String key, String value, String rep1, String rep2) {
-        this.originalID = this.destination;
+
+        this.MessageStage = Stages.INSERT_REP;
         this.key = key;
         this.value = value;
-        this.type = "insert";
-        this.rep1 = rep1;
-        this.rep2 = rep2;
-        this.state = "replica";
-
 
         return this;
     }
 
     public Message QueryAll() {
 
-
-        this.type = "query";
+        this.MessageStage = Stages.QUERY_ALL;
         this.key = "@";
-        this.Querytype = "all";
-
 
         return this;
     }
 
     public Message QueryAllResponse(HashMap<String, String> messages) {
 
-
-        this.hashmap = messages;
-        this.type = "cursor";
-        this.Querytype = "all";
-
+        this.MessageStage = Stages.QUERY_ALL_ACK;
+        this.QueryMessages = messages;
 
         return this;
     }
 
     public Message QuerySelection(String selection) {
 
-
-        this.type = "query";
+        this.MessageStage = Stages.QUERY_SEL;
         this.key = selection;
 
         return this;
     }
 
-    public Message QuerySelectionReplica( String selection) {
-
-        this.key = selection;
-        this.type = "query";
+     public Message QuerySelectionResponse( String key, String value,HashMap<String, String> messages ) {
 
 
-        return this;
-    }
-
-    public Message QuerySelectionResponse( String key, String value,HashMap<String, String> messages ) {
-
-
+        this.MessageStage = Stages.QUERY_SEL_ACK;
         this.key = key;
         this.value = value;
-        this.hashmap = messages;
-        this.type = "cursor";
+        this.QueryMessages = messages;
 
         return this;
     }

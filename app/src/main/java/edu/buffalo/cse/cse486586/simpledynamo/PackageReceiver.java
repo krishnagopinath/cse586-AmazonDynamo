@@ -37,23 +37,76 @@ public class PackageReceiver implements Runnable {
                             new BufferedInputStream(socket.getInputStream()));
                     msg = (Message) ois.readObject();
                 }
-                if (msg.type.equalsIgnoreCase("insert")) {
-                    insert(msg);
-                }
-                if (msg.type.equalsIgnoreCase("query")) {
-                    query(msg);
-                }
-                if (msg.type.equalsIgnoreCase("cursor")) {
-                    sendbackCursor(msg);
-                }
-                if (msg.type.equalsIgnoreCase("tableReq")) {
-                    sendTable(msg);
-                }
-                if (msg.type.equalsIgnoreCase("table")) {
-                    copyContents2(msg);
-                }
-                if (msg.type.equalsIgnoreCase("delete")) {
-                    delete();
+
+
+                switch (msg.MessageStage) {
+                    case RECOVERY_REQ:
+                        sendTable(msg);
+                        break;
+                    case RECOVERY_ACK:
+                        copyContents2(msg);
+                        break;
+                    case DELETE_REQ:
+                        delete();
+                        break;
+                    case INSERT_OR:
+                    case INSERT_REP:
+                        insert(msg);
+                        break;
+                    case QUERY_ALL:
+                        HashMap<String, String> messages = new HashMap<String, String>();
+                        try {
+                            Cursor cursor = Stash.sqlite.query(
+                                    "Msg", new String[]{"key", "value"}, null, null, null, null, null);
+
+
+                            while (cursor.moveToNext()) {
+                                int key = cursor.getColumnIndex("key");
+                                int value = cursor.getColumnIndex("value");
+                                messages.put(cursor.getString(key),
+                                        cursor.getString(value));
+                            }
+                            ;
+
+                            Log.v("PackageReceiver Query", "Returning cursor");
+
+                            Message message = new Message(Stash.portStr, msg.source).QueryAllResponse(messages);
+
+                            Runnable r = new PackageSender(message);
+                            Thread th = new Thread(r);
+                            th.start();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
+
+                    case QUERY_ALL_ACK:
+                        Stash.hashmapstar.putAll(msg.QueryMessages);
+                        Log.v("PackageReceiver Query", "hashmap updated " + msg.QueryMessages);
+                        Iterator<Entry<String, String>> it = msg.QueryMessages.entrySet()
+                                .iterator();
+                        Log.v("Provider query", "hashmap here " + msg.QueryMessages);
+                        while (it.hasNext()) {
+                            @SuppressWarnings("rawtypes")
+                            Entry pairs = (Entry) it.next();
+                            Stash.matcursor.addRow(new Object[]{
+                                    pairs.getKey(), pairs.getValue()});
+                            Log.v("provider query", "matcursor updated " + pairs.getValue());
+
+                        }
+                        Stash.tempflag = true;
+                        Log.v("PackageReceiver query", "Cursor updated lock released");
+                        break;
+
+                    case QUERY_SEL:
+                        query(msg);
+                        break;
+                    case QUERY_SEL_ACK:
+                        sendbackCursor(msg);
+                        break;
+
+
+
                 }
 
             }
@@ -70,8 +123,8 @@ public class PackageReceiver implements Runnable {
 
     private void copyContents2(Message msg2) {
 
-        for (String k : msg2.hashtable.keySet()) {
-            Message m = msg2.hashtable.get(k);
+        for (String k : msg2.RecoveryMessages.keySet()) {
+            Message m = msg2.RecoveryMessages.get(k);
 
             String ke = m.key;
             String v = m.value;
@@ -115,13 +168,11 @@ public class PackageReceiver implements Runnable {
     }
 
     private void sendbackCursor(Message msg2) {
-
-        if (msg2.Querytype.equalsIgnoreCase("basic")) {
-            Stash.hashmap.putAll(msg2.hashmap);
-            Log.v("PackageReceiver Query", "hashmap updated " + msg2.hashmap);
-            Iterator<Entry<String, String>> it = msg2.hashmap.entrySet()
+            Stash.hashmap.putAll(msg2.QueryMessages);
+            Log.v("PackageReceiver Query", "hashmap updated " + msg2.QueryMessages);
+            Iterator<Entry<String, String>> it = msg2.QueryMessages.entrySet()
                     .iterator();
-            Log.v("Provider query", "hashmap here " + msg2.hashmap);
+            Log.v("Provider query", "hashmap here " + msg2.QueryMessages);
             while (it.hasNext()) {
                 @SuppressWarnings("rawtypes")
                 Entry pairs = (Entry) it.next();
@@ -134,29 +185,11 @@ public class PackageReceiver implements Runnable {
             }
             Stash.tempflag = true;
             Log.v("PackageReceiver query", "Cursor updated lock released");
-        } else if (msg2.Querytype.equalsIgnoreCase("all")) {
-            Stash.hashmapstar.putAll(msg2.hashmap);
-            Log.v("PackageReceiver Query", "hashmap updated " + msg2.hashmap);
-            Iterator<Entry<String, String>> it = msg2.hashmap.entrySet()
-                    .iterator();
-            Log.v("Provider query", "hashmap here " + msg2.hashmap);
-            while (it.hasNext()) {
-                @SuppressWarnings("rawtypes")
-                Entry pairs = (Entry) it.next();
-                Stash.matcursor.addRow(new Object[]{
-                        pairs.getKey(), pairs.getValue()});
-                Log.v("provider query", "matcursor updated " + pairs.getValue());
 
-            }
-            Stash.tempflag = true;
-            Log.v("PackageReceiver query", "Cursor updated lock released");
-        }
     }
 
     private void query(Message msg2) {
 
-
-        if (msg2.Querytype.equalsIgnoreCase("basic")) {
 
             String destination = "";
             String mKey = "";
@@ -211,33 +244,7 @@ public class PackageReceiver implements Runnable {
             Thread th = new Thread(r);
             th.start();
 
-        } else if (msg2.Querytype.equalsIgnoreCase("all")) {
 
-            HashMap<String, String> messages = new HashMap<String, String>();
-            try {
-                Cursor cursor = Stash.sqlite.query(
-                        "Msg", new String[]{"key", "value"}, null, null, null, null, null);
-
-
-                while (cursor.moveToNext()) {
-                    int key = cursor.getColumnIndex("key");
-                    int value = cursor.getColumnIndex("value");
-                    messages.put(cursor.getString(key),
-                            cursor.getString(value));
-                }
-                ;
-
-                Log.v("PackageReceiver Query", "Returning cursor");
-
-                Message message = new Message(Stash.portStr, msg2.source).QueryAllResponse(messages);
-
-                Runnable r = new PackageSender(message);
-                Thread th = new Thread(r);
-                th.start();
-            } catch (Exception e) {
-            }
-
-        }
     }
 
 
@@ -253,7 +260,7 @@ public class PackageReceiver implements Runnable {
             Log.v("Insert", "Insert received at "
                     + Stash.portStr);
             Log.v("Insert", k + " =key " + v + " =value" + " State= "
-                    + msg2.state);
+                    + msg2.MessageStage);
             Stash.table.put(k, msg2);
             id = Stash.sqlite.insertWithOnConflict("Msg", null,
                     cv, SQLiteDatabase.CONFLICT_REPLACE);

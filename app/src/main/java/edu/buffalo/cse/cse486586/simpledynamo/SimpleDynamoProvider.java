@@ -286,7 +286,7 @@ public class SimpleDynamoProvider extends ContentProvider {
                     destination = "5556";
                 }
 
-                Message m1 = new Message(msg.source, destination).QuerySelectionReplica(msg.key);
+                Message m1 = new Message(msg.source, destination).QuerySelection(selection);
                 Log.d("failure query", "Sending replica query to " + m1.destination);
                 Runnable ro = new PackageSender(m1);
                 Thread tho = new Thread(ro);
