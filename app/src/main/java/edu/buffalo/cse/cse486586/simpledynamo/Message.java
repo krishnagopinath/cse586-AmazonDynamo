@@ -92,6 +92,20 @@ public class Message implements Serializable {
         return this;
     }
 
+    public Message QueryAllResponse(String source, String destination, HashMap<String, String> messages) {
+
+
+
+        this.source = source;
+        this.destination = destination;
+        this.hashmap = messages;
+        this.type = "cursor";
+        this.Querytype = "all";
+
+
+        return this;
+    }
+
     public Message QuerySelection(String source, String destination, String selection) {
 
 
@@ -110,6 +124,18 @@ public class Message implements Serializable {
         this.key = selection;
         this.type = "query";
 
+
+        return this;
+    }
+
+    public Message QuerySelectionResponse(String source, String destination, String key, String value,HashMap<String, String> messages ) {
+
+        this.source = source;
+        this.destination = destination;
+        this.key = key;
+        this.value = value;
+        this.hashmap = messages;
+        this.type = "cursor";
 
         return this;
     }

@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Formatter;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -129,7 +130,6 @@ public class PackageReceiver implements Runnable {
                             pairs.getKey(), pairs.getValue()});
                 }
                 Log.v("provider query", "matcursor updated " + pairs.getKey());
-                // it.remove(); // avoids a ConcurrentModificationException
 
             }
             Stash.tempflag = true;
@@ -146,7 +146,6 @@ public class PackageReceiver implements Runnable {
                 Stash.matcursor.addRow(new Object[]{
                         pairs.getKey(), pairs.getValue()});
                 Log.v("provider query", "matcursor updated " + pairs.getValue());
-                // it.remove(); // avoids a ConcurrentModificationException
 
             }
             Stash.tempflag = true;
@@ -155,82 +154,92 @@ public class PackageReceiver implements Runnable {
     }
 
     private void query(Message msg2) {
-        // synchronized(SimpleDynamoProvider.sqlite)
-        {
-            if (msg2.Querytype.equalsIgnoreCase("basic")) {
-                String[] columns = {"key", "value"};
-                String selection = msg2.key;
-                Message mCursor = new Message();
-                mCursor.key = msg2.key;
-                mCursor.value = "";
 
-                Cursor cursor = Stash.sqlite.query("Msg",
-                        columns, "key = " + "'" + selection + "'", null, null,
-                        null, null);
 
-                mCursor.destination = msg2.source;
-                cursor.moveToNext();
-                int key = cursor.getColumnIndex("key");
-                int value = cursor.getColumnIndex("value");
-                if (mCursor != null && cursor.moveToFirst()) {
-                    mCursor.value = cursor.getString(value);
-                } else
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                /* MURKY */
-                while (mCursor.value.equals(null)) {
-                    cursor = Stash.sqlite.query("Msg", columns,
-                            "key = " + "'" + selection + "'", null, null, null,
-                            null);
+        if (msg2.Querytype.equalsIgnoreCase("basic")) {
 
-                    mCursor.destination = msg2.source;
-                    cursor.moveToNext();
-                    key = cursor.getColumnIndex("key");
-                    value = cursor.getColumnIndex("value");
-                    mCursor.value = cursor.getString(value);
+            String destination = "";
+            String mKey = "";
+            String mValue = "";
+            HashMap<String, String> messages = new HashMap<String, String>();
+
+            String[] columns = {"key", "value"};
+            String selection = msg2.key;
+
+            mKey = msg2.key;
+            mValue = "";
+
+            Cursor cursor = Stash.sqlite.query("Msg",
+                    columns, "key = " + "'" + selection + "'", null, null,
+                    null, null);
+
+            destination = msg2.source;
+            cursor.moveToNext();
+            int key = cursor.getColumnIndex("key");
+            int value = cursor.getColumnIndex("value");
+            if (cursor.moveToFirst()) {
+                mValue = cursor.getString(value);
+            } else
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                /* MURKY */
-                Log.v("PackageReceiver query in", "Key :" + mCursor.key + " Value: "
-                        + mCursor.value + " in " + Stash.portStr);
-                mCursor.type = "cursor";
 
-                mCursor.hashmap.put(mCursor.key, mCursor.value);
+            while (mValue.equals(null)) {
+                cursor = Stash.sqlite.query("Msg", columns,
+                        "key = " + "'" + selection + "'", null, null, null,
+                        null);
+
+                destination = msg2.source;
+                cursor.moveToNext();
+                key = cursor.getColumnIndex("key");
+                value = cursor.getColumnIndex("value");
+                mValue = cursor.getString(value);
+            }
+
+            Log.v("PackageReceiverQuery", "Key :" + mKey + " Value: "
+                    + mValue + " in " + Stash.portStr);
+
+
+            messages.put(mKey, mValue);
+
+            Message message = new Message().QuerySelectionResponse(Stash.portStr, destination, mKey, mValue, messages);
+
+            Log.v("PackageReceiver Query", "Returning cursor");
+            Runnable r = new PackageSender(message);
+            Thread th = new Thread(r);
+            th.start();
+
+        } else if (msg2.Querytype.equalsIgnoreCase("all")) {
+
+            HashMap<String, String> messages = new HashMap<String, String>();
+            try {
+                Cursor cursor = Stash.sqlite.query(
+                        "Msg", new String[]{"key", "value"}, null, null, null, null, null);
+
+
+                while (cursor.moveToNext()) {
+                    int key = cursor.getColumnIndex("key");
+                    int value = cursor.getColumnIndex("value");
+                    messages.put(cursor.getString(key),
+                            cursor.getString(value));
+                }
+                ;
+
                 Log.v("PackageReceiver Query", "Returning cursor");
-                Runnable r = new PackageSender(mCursor);
+
+                Message message = new Message().QueryAllResponse(Stash.portStr, msg2.source, messages);
+
+                Runnable r = new PackageSender(message);
                 Thread th = new Thread(r);
                 th.start();
-
-            } else if (msg2.Querytype.equalsIgnoreCase("all")) {
-
-                String[] columns = {"key", "value"};
-                String selection = msg2.key;
-
-                try {
-                    Cursor cursor = Stash.sqlite.query(
-                            "Msg", columns, null, null, null, null, null);
-                    Message mCursor = new Message();
-                    mCursor.destination = msg2.source;
-                    while (cursor.moveToNext()) {
-                        int key = cursor.getColumnIndex("key");
-                        int value = cursor.getColumnIndex("value");
-                        mCursor.hashmap.put(cursor.getString(key),
-                                cursor.getString(value));
-                    }
-                    mCursor.type = "cursor";
-                    Log.v("PackageReceiver Query", "Returning cursor");
-                    Runnable r = new PackageSender(mCursor);
-                    Thread th = new Thread(r);
-                    th.start();
-                } catch (Exception e) {
-                }
-
+            } catch (Exception e) {
             }
-        }
 
+        }
     }
+
 
     private void insert(Message msg2) {
         long id = 0;
