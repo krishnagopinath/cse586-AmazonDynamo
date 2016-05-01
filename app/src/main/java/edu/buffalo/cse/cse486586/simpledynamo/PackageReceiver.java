@@ -7,12 +7,8 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 public class PackageReceiver implements Runnable {
     ServerSocket serverSocket = null;
@@ -39,17 +35,17 @@ public class PackageReceiver implements Runnable {
                 HashMap<String, String> messages = null;
 
 
-                switch (msg.MessageStage) {
+                switch (msg.getMessageStage()) {
                     case RECOVERY_REQ:
-                        message = new Message(Stash.portStr, msg.source).RecoveryResponse(Stash.RecoveryMessages);
+                        message = new Message(Stash.portStr, msg.getSource()).RecoveryResponse(Stash.RecoveryMessages);
                         Stash.sendMessage(message);
                         break;
                     case RECOVERY_ACK:
-                        for (String k : msg.RecoveryMessages.keySet()) {
-                            Message recoveryMessage = msg.RecoveryMessages.get(k);
+                        for (String k : msg.getRecoveryMessages().keySet()) {
+                            Message recoveryMessage = msg.getRecoveryMessages().get(k);
 
-                            String key = recoveryMessage.key;
-                            String value = recoveryMessage.value;
+                            String key = recoveryMessage.getKey();
+                            String value = recoveryMessage.getValue();
 
                             String position = Stash.getPosition(key);
 
@@ -57,80 +53,37 @@ public class PackageReceiver implements Runnable {
                             if (position.equalsIgnoreCase(Stash.portStr)
                                     || Arrays.asList(Stash.predecessorMap.get(Stash.portStr)).contains(position)) {
 
-                                ContentValues cv = new ContentValues();
-                                cv.put("key", key);
-                                cv.put("value", value);
-                                Stash.sqlite.insertWithOnConflict("Msg", null, cv, SQLiteDatabase.CONFLICT_REPLACE);
-
-                                //Stash.store.edit().putString(key, value).commit();
+                                Stash.store.edit().putString(key, value).commit();
                             }
 
                         }
                         break;
                     case DELETE_REQ:
-                        Stash.sqlite.delete("Msg", null, null);
-                        //Stash.store.edit().clear().commit();
+                        Stash.store.edit().clear().commit();
                         break;
-                    case INSERT_OR:
-                    case INSERT_REP:
-                        long id = 0;
 
-                        synchronized (Stash.sqlite) {
-                            String key = msg.key;
-                            String value = msg.value;
-                            ContentValues cv = new ContentValues();
-                            cv.put("key", key);
-                            cv.put("value", value);
+                    case INSERT_REQ:
+                        synchronized (Stash.lock) {
+                            String key = msg.getKey();
+                            String value = msg.getValue();
 
                             Stash.RecoveryMessages.put(key, msg);
-                            id = Stash.sqlite.insertWithOnConflict("Msg", null,
-                                    cv, SQLiteDatabase.CONFLICT_REPLACE);
-
-                            //Stash.store.edit().putString(key, value).commit();
+                            Stash.store.edit().putString(key, value).commit();
 
                         }
                         break;
+
                     case QUERY_ALL:
                         messages = new HashMap<String, String>();
-                        Cursor cursor = Stash.sqlite.query(
-                                "Msg", new String[]{"key", "value"}, null, null, null, null, null);
 
-                        while (cursor.moveToNext()) {
-                            int key = cursor.getColumnIndex("key");
-                            int value = cursor.getColumnIndex("value");
-                            messages.put(cursor.getString(key),
-                                    cursor.getString(value));
+                        Map<String, ?> rows = Stash.store.getAll();
+
+                        for (String key : rows.keySet()) {
+                            messages.put(key, rows.get(key).toString());
                         }
 
-
-                        /*
-                            Map<String, ?> rows = Stash.store.getAll();
-
-
-                            for (String key : rows.keySet()) {
-                                messages.put(key,  rows.get(key).toString());
-                            }
-
-                        */
-
-
-                        message = new Message(Stash.portStr, msg.source).QueryAllResponse(messages);
+                        message = new Message(Stash.portStr, msg.getSource()).QueryAllResponse(messages);
                         Stash.sendMessage(message);
-
-
-                        break;
-
-                    case QUERY_ALL_ACK:
-                        Iterator<Entry<String, String>> it = msg.QueryMessages.entrySet().iterator();
-                        while (it.hasNext()) {
-                            Entry entry = it.next();
-                            Stash.matrixCursor.addRow(new Object[]{
-                                    entry.getKey(),
-                                    entry.getValue()
-                            });
-
-                        }
-                        Stash.waitFlagger = true;
                         break;
 
                     case QUERY_SEL:
@@ -139,80 +92,42 @@ public class PackageReceiver implements Runnable {
                         String mValue = "";
                         messages = new HashMap<String, String>();
 
-                        String[] columns = {"key", "value"};
-                        String selection = msg.key;
+                        String selection = msg.getKey();
 
-                        mKey = msg.key;
+                        mKey = msg.getKey();
                         mValue = "";
 
-                        Cursor cursor1 = Stash.sqlite.query("Msg",
-                                columns, "key = " + "'" + selection + "'", null, null,
-                                null, null);
+                        destination = msg.getSource();
 
-
-                        destination = msg.source;
-                        cursor1.moveToNext();
-                        int key = cursor1.getColumnIndex("key");
-                        int value = cursor1.getColumnIndex("value");
-                        if (cursor1.moveToFirst()) {
-                            mValue = cursor1.getString(value);
-                        } else
-                            try {
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-
-                        while (mValue.equals(null)) {
-                            cursor1 = Stash.sqlite.query("Msg", columns,
-                                    "key = " + "'" + selection + "'", null, null, null,
-                                    null);
-
-                            destination = msg.source;
-                            cursor1.moveToNext();
-                            key = cursor1.getColumnIndex("key");
-                            value = cursor1.getColumnIndex("value");
-                            mValue = cursor1.getString(value);
-                        }
-
-
-                    /*
                         String row = Stash.store.getString(selection, "");
 
-                        if(!row.equals("")) {
+                        if (!row.equals("")) {
                             mValue = row;
                         } else {
-                            try {
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+                            Thread.sleep(100);
                         }
 
                         while (mValue.equals("")) {
                             row = Stash.store.getString(selection, "");
-                            destination = msg.source;
+                            destination = msg.getSource();
                             mValue = row;
                         }
-                    */
 
                         messages.put(mKey, mValue);
                         message = new Message(Stash.portStr, destination).QuerySelectionResponse(mKey, mValue, messages);
-
-
                         Stash.sendMessage(message);
+
                         break;
+
+                    case QUERY_ALL_ACK:
                     case QUERY_SEL_ACK:
-                        Iterator<Entry<String, String>> it1 = msg.QueryMessages.entrySet()
-                                .iterator();
-                        while (it1.hasNext()) {
 
-                            Entry pairs = (Entry) it1.next();
-                            if (!(pairs.getValue().equals(""))) {
+                        for (String key : msg.getQueryMessages().keySet()) {
+                            if (!msg.getQueryMessages().get("key").equals("")) {
                                 Stash.matrixCursor.addRow(new Object[]{
-                                        pairs.getKey(), pairs.getValue()});
+                                        key, msg.getQueryMessages().get("key")
+                                });
                             }
-
                         }
                         Stash.waitFlagger = true;
                         break;

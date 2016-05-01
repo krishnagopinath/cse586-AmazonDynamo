@@ -2,6 +2,7 @@ package edu.buffalo.cse.cse486586.simpledynamo;
 
 import java.net.ServerSocket;
 import java.util.LinkedList;
+import java.util.Map;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -14,17 +15,15 @@ import android.telephony.TelephonyManager;
 
 public class SimpleDynamoProvider extends ContentProvider {
 
-    double wait = 0;
+    double delay = 0;
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
 
-        Stash.sqlite.delete("Msg", null, null);
+        Stash.store.edit().clear().commit();
 
-        //Stash.store.edit().clear().commit();
-
-        for (String k : Stash.nodeHashMap.keySet()) {
-            Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(k)).DeleteRequest();
+        for (String key : Stash.nodeHashMap.keySet()) {
+            Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(key)).DeleteRequest();
             Stash.sendMessage(msg);
         }
 
@@ -47,25 +46,20 @@ public class SimpleDynamoProvider extends ContentProvider {
 
 
             //find right location
-            if (Stash.nodeHashMap.higherEntry(Stash.genHash(key)) != null)
-                destination = Stash.nodeHashMap.higherEntry(Stash.genHash(key)).getValue();
-            else
-                destination = Stash.nodeHashMap.firstEntry().getValue();
+            destination = Stash.getPosition(key);
 
-            Message m = new Message(Stash.portStr, destination).InsertOriginal(key, value);
+            Message m = new Message(Stash.portStr, destination).InsertRequest(key, value);
 
-            Stash.RecoveryMessages.put(m.key, m);
-
+            Stash.RecoveryMessages.put(m.getKey(), m);
 
             //insert it in destination first
             Stash.sendMessage(m, Thread.MAX_PRIORITY);
 
-
             //find replicas for destination
-            String[] replicas = Stash.successorMap.get(m.destination);
+            String[] replicas = Stash.successorMap.get(m.getDestination());
 
-            Message m2 = new Message(Stash.portStr, replicas[0]).InsertReplica(m.key, m.value, replicas[0], replicas[1]);
-            Message m3 = new Message(Stash.portStr, replicas[1]).InsertReplica(m.key, m.value, replicas[0], replicas[1]);
+            Message m2 = new Message(Stash.portStr, replicas[0]).InsertRequest(m.getKey(), m.getValue());
+            Message m3 = new Message(Stash.portStr, replicas[1]).InsertRequest(m.getKey(), m.getValue());
 
             //send to first replica
             Stash.sendMessage(m2, Thread.MAX_PRIORITY);
@@ -84,7 +78,6 @@ public class SimpleDynamoProvider extends ContentProvider {
         try {
             Stash.context = getContext();
 
-            Stash.sqlite = new DB(Stash.context).getWritableDatabase();
             Stash.store = Stash.context.getSharedPreferences(Stash.PREFS_NAME, 0);
 
 
@@ -125,10 +118,10 @@ public class SimpleDynamoProvider extends ContentProvider {
             new Thread(new PackageReceiver(serverSocket)).start();
             Thread.sleep(1000);
 
-            synchronized (Stash.sqlite) {
+            synchronized (Stash.lock) {
                 //ask for messages
-                for (String k : Stash.nodeHashMap.keySet()) {
-                    Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(k)).RecoveryRequest();
+                for (String key : Stash.nodeHashMap.keySet()) {
+                    Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(key)).RecoveryRequest();
                     Stash.sendMessage(msg, Thread.MIN_PRIORITY);
                 }
 
@@ -148,27 +141,20 @@ public class SimpleDynamoProvider extends ContentProvider {
                 Stash.RecoveryMessages.clear();
                 Thread.sleep(6000);
 
-                return Stash.sqlite.query("Msg", null, null, null, null, null, null);
+                Map<String, ?> rows = Stash.store.getAll();
+                MatrixCursor cursor = new MatrixCursor(new String[]{Stash.KEY_FIELD, Stash.VALUE_FIELD});
+                for (String key : rows.keySet()) {
+                    cursor.addRow(new Object[]{key, rows.get(key).toString()});
+                }
 
-                /*
-                    Map<String, ?> rows = Stash.store.getAll();
-
-                    MatrixCursor cursor = new MatrixCursor(new String[]{Stash.KEY_FIELD, Stash.VALUE_FIELD});
-
-                    for (String key : rows.keySet()) {
-                        cursor.addRow(new Object[]{key, rows.get(key).toString()});
-                    }
-
-                    return cursor;
-                */
+                return cursor;
 
 
-            }
-            if (selection.equals("*")) {
+            } else if (selection.equals("*")) {
                 Stash.waitFlagger = false;
                 Stash.matrixCursor = new MatrixCursor(new String[]{"key", "value"});
-                for (String k : Stash.nodeHashMap.keySet()) {
-                    Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(k)).QueryAll();
+                for (String key : Stash.nodeHashMap.keySet()) {
+                    Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(key)).QueryAll();
                     Stash.sendMessage(msg);
                 }
                 Thread.sleep(6000);
@@ -177,35 +163,28 @@ public class SimpleDynamoProvider extends ContentProvider {
                     Thread.sleep(100);
                 }
                 return Stash.matrixCursor;
-            }
-            if ((!selection.equalsIgnoreCase("*"))
-                    && (!selection.equalsIgnoreCase("@"))) {
+            } else {
                 Stash.waitFlagger = false;
                 Stash.matrixCursor = new MatrixCursor(new String[]{"key", "value"});
 
                 String destination = Stash.getPosition(selection);
-
                 Message msg = new Message(Stash.portStr, destination).QuerySelection(selection);
-
                 Stash.sendMessage(msg);
 
-
                 //also ask from replicas
-                destination = Stash.successorMap.get(msg.destination)[0];
+                destination = Stash.successorMap.get(msg.getDestination())[0];
 
-
-                Message m1 = new Message(msg.source, destination).QuerySelection(selection);
-                Stash.sendMessage(m1);
+                msg = new Message(Stash.portStr, destination).QuerySelection(selection);
+                Stash.sendMessage(msg);
 
                 while (!Stash.waitFlagger) {
                     Thread.sleep(100);
-                    wait++;
-                    if (wait > 10000) {
+                    if (++delay > 10000) {
                         break;
                     }
                 }
 
-                wait = 0;
+                delay = 0;
                 Thread.sleep(1000);
                 Stash.matrixCursor.moveToFirst();
 

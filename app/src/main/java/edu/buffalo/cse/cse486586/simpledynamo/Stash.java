@@ -12,19 +12,9 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.TreeMap;
 
-/**
- * Created by krishna on 4/30/16.
- */
-
 public class Stash {
 
-
-    public static Context context;
-    public static SQLiteDatabase sqlite;
-
-
-
-
+    public static final Object lock = new Object();
     public static final String PREFS_NAME = "KeyValueStore";
     public static final String KEY_FIELD = "key";
     public static final String VALUE_FIELD = "value";
@@ -40,7 +30,6 @@ public class Stash {
         t.setPriority(priority);
         t.start();
     }
-
 
     public static String genHash(String input) throws NoSuchAlgorithmException {
         MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
@@ -68,8 +57,8 @@ public class Stash {
         return position;
     }
 
+    public static Context context;
     public static String portStr;
-
 
     public static TreeMap<String, String> nodeHashMap = new TreeMap<String, String>();
     public static HashMap<String, String[]> predecessorMap = new HashMap<String, String[]>();

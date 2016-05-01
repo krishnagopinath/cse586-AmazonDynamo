@@ -3,53 +3,42 @@ package edu.buffalo.cse.cse486586.simpledynamo;
 import java.io.BufferedOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
-
-import android.util.Log;
 
 public class PackageSender implements Runnable {
 
 
-    Message m;
+    Message message;
     Socket socket;
 
     PackageSender(Message msg) {
-        this.m = msg;
-
+        this.message = msg;
     }
 
     public void run() {
 
         try {
-            int port = Integer.parseInt(m.destination) * 2;
-            Log.v("PackageSender", Integer.toString(port));
-            socket = new Socket("10.0.2.2", port);
+
+            socket = new Socket(InetAddress.getByAddress(new byte[]{10, 0, 2, 2}), Integer.parseInt(message.getDestination()) * 2);
             socket.setSoTimeout(2000);
-            OutputStream o = socket.getOutputStream();
-            BufferedOutputStream bout = new BufferedOutputStream(o);
+            OutputStream outputStream = socket.getOutputStream();
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
 
 
-            ObjectOutputStream oos = new ObjectOutputStream(bout);
-            oos.writeObject(m);
-            oos.flush();
-            o.flush();
-            o.close();
-            oos.close();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(bufferedOutputStream);
+            objectOutputStream.writeObject(message);
+            objectOutputStream.flush();
+            outputStream.flush();
+            outputStream.close();
+            objectOutputStream.close();
             socket.close();
-        } catch (SocketException se) {
-            Log.d("PackageSender time out", "Time out at " + m.destination);
+        } catch (SocketException e) {
+            e.printStackTrace();
         } catch (Exception e) {
-            Log.v("Clienttask", e.toString());
-        } finally {
-            try {
-
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            e.printStackTrace();
         }
-
     }
 
 }
