@@ -24,9 +24,9 @@ public class PackageReceiver implements Runnable {
 
                 {
                     socket = serverSocket.accept();
-                    ObjectInputStream ois = new ObjectInputStream(
+                    ObjectInputStream objectInputStream = new ObjectInputStream(
                             new BufferedInputStream(socket.getInputStream()));
-                    msg = (Message) ois.readObject();
+                    msg = (Message) objectInputStream.readObject();
                 }
 
                 Message message = null;

@@ -2,7 +2,6 @@ package edu.buffalo.cse.cse486586.simpledynamo;
 
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -16,8 +15,6 @@ import android.telephony.TelephonyManager;
 
 
 public class SimpleDynamoProvider extends ContentProvider {
-
-    double delay = 0;
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
@@ -128,7 +125,6 @@ public class SimpleDynamoProvider extends ContentProvider {
                     Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(key)).RecoveryRequest();
                     Stash.sendMessage(msg, Thread.MIN_PRIORITY);
                 }
-
             }
 
         } catch (Exception e) {
@@ -156,7 +152,7 @@ public class SimpleDynamoProvider extends ContentProvider {
 
             } else if (selection.equals("*")) {
                 Stash.waitFlagger = false;
-                Stash.matrixCursor = new MatrixCursor(new String[]{"key", "value"});
+                Stash.matrixCursor = new MatrixCursor(new String[]{Stash.KEY_FIELD, Stash.VALUE_FIELD});
                 for (String key : Stash.nodeHashMap.keySet()) {
                     Message msg = new Message(Stash.portStr, Stash.nodeHashMap.get(key)).QueryAll();
                     Stash.sendMessage(msg);
@@ -169,7 +165,7 @@ public class SimpleDynamoProvider extends ContentProvider {
                 return Stash.matrixCursor;
             } else {
                 Stash.waitFlagger = false;
-                Stash.matrixCursor = new MatrixCursor(new String[]{"key", "value"});
+                Stash.matrixCursor = new MatrixCursor(new String[]{Stash.KEY_FIELD, Stash.VALUE_FIELD});
 
                 String destination = Stash.getPosition(selection);
                 Message msg = new Message(Stash.portStr, destination).QuerySelection(selection);
@@ -183,14 +179,8 @@ public class SimpleDynamoProvider extends ContentProvider {
 
                 while (!Stash.waitFlagger) {
                     Thread.sleep(100);
-                    if (++delay > 10000) {
-                        break;
-                    }
                 }
 
-                delay = 0;
-                Thread.sleep(1000);
-                Stash.matrixCursor.moveToFirst();
 
                 return Stash.matrixCursor;
             }
